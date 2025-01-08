@@ -5,6 +5,11 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
+    DnacBase,
+    validate_list_of_dicts,
+)
+from ansible.module_utils.basic import AnsibleModule
 
 __metaclass__ = type
 __author__ = ("Archit Soni, Madhan Sankaranarayanan")
@@ -157,13 +162,6 @@ dnac_response:
 """
 
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
-    DnacBase,
-    validate_list_of_dicts,
-)
-
-
 class Tags(DnacBase):
     """Class containing member attributes for tags workflow manager module"""
 
@@ -203,20 +201,20 @@ class Tags(DnacBase):
                 'system_tag': {'type': 'bool', 'default': False},
                 'force_delete': {'type': 'bool', 'default': False},
                 'device_rules': {
-                    'type':'dict',
+                    'type': 'dict',
                     'elements': 'dict',
                     'rule_descriptions': {
                         'type': 'list',
                         'elements': 'dict',
                         'required': True,
-                        'rule_name': {'type': 'str', 'required': True, 'choices':['device_name', 'device_family', 'device_series', 'ip_address', 'location', 'version']},
-                        'search_pattern': {'type': 'str', 'required': True, 'choices':['contains', 'equals', 'starts_with', 'ends_with']},
-                        'value': {'type':'str', 'required': True},
-                        'operation': {'type':'str', 'default':'ILIKE', 'choices':['ILIKE', 'LIKE']}
+                        'rule_name': {'type': 'str', 'required': True, 'choices': ['device_name', 'device_family', 'device_series', 'ip_address', 'location', 'version']},
+                        'search_pattern': {'type': 'str', 'required': True, 'choices': ['contains', 'equals', 'starts_with', 'ends_with']},
+                        'value': {'type': 'str', 'required': True},
+                        'operation': {'type': 'str', 'default': 'ILIKE', 'choices': ['ILIKE', 'LIKE']}
                     }
                 },
                 'port_rules': {
-                    'type':'dict',
+                    'type': 'dict',
                     'elements': 'dict',
                     'scope_description': {
                         'type': 'dict',
@@ -225,7 +223,7 @@ class Tags(DnacBase):
                         'grouping_category': {'type': 'str'},
                         'inherit': {'type': 'bool', 'default': False},
                         'group_members': {
-                            'type':'list',
+                            'type': 'list',
                             'elements': 'str'
                         }
                     },
@@ -233,17 +231,17 @@ class Tags(DnacBase):
                         'type': 'list',
                         'elements': 'dict',
                         'required': True,
-                        'rule_name': {'type': 'str','required': True, 'choices':['speed', 'admin_status', 'port_name', 'operational_status', 'description']},
-                        'search_pattern': {'type': 'str', 'required': True, 'choices':['contains', 'equals', 'starts_with', 'ends_with']},
-                        'value': {'type':'str', 'required': True},
-                        'operation': {'type':'str', 'default':'ILIKE', 'choices':['ILIKE', 'LIKE']}
+                        'rule_name': {'type': 'str', 'required': True, 'choices': ['speed', 'admin_status', 'port_name', 'operational_status', 'description']},
+                        'search_pattern': {'type': 'str', 'required': True, 'choices': ['contains', 'equals', 'starts_with', 'ends_with']},
+                        'value': {'type': 'str', 'required': True},
+                        'operation': {'type': 'str', 'default': 'ILIKE', 'choices': ['ILIKE', 'LIKE']}
                     }
                 },
                 'assign_members': {
-                    'type':'dict',
+                    'type': 'dict',
                     'elements': 'dict',
                     'device_details': {
-                        'type':'list',
+                        'type': 'list',
                         'elements': 'dict',
                         'ip': {
                             'type': 'list',
@@ -264,10 +262,10 @@ class Tags(DnacBase):
                         'port_names': {
                             'type': 'list',
                             'elements': 'str',
-                        }    
+                        }
                     },
                     'site_details': {
-                        'type':'list',
+                        'type': 'list',
                         'elements': 'dict',
                         'site_names': {
                             'type': 'list',
@@ -276,7 +274,7 @@ class Tags(DnacBase):
                         'port_names': {
                             'type': 'list',
                             'elements': 'str',
-                        }    
+                        }
                     }
                 },
             },
@@ -288,7 +286,7 @@ class Tags(DnacBase):
                     'required': True
                 },
                 'device_details': {
-                    'type':'list',
+                    'type': 'list',
                     'elements': 'dict',
                     'ip': {
                         'type': 'list',
@@ -309,10 +307,10 @@ class Tags(DnacBase):
                     'port_names': {
                         'type': 'list',
                         'elements': 'str',
-                    }    
+                    }
                 },
                 'site_details': {
-                    'type':'list',
+                    'type': 'list',
                     'elements': 'dict',
                     'site_names': {
                         'type': 'list',
@@ -321,7 +319,7 @@ class Tags(DnacBase):
                     'port_names': {
                         'type': 'list',
                         'elements': 'str',
-                    }    
+                    }
                 }
             }
 
@@ -337,27 +335,27 @@ class Tags(DnacBase):
         )
 
         self.debugg(invalid_params)
-    
+
         if invalid_params:
-            self.msg = "The playbook contains invalid parameters: {0}".format(invalid_params)
+            self.msg = "The playbook contains invalid parameters: {0}".format(
+                invalid_params)
             self.set_operation_result("failed", False, self.msg, "ERROR")
             return self
         self.validated_config = valid_temp
-        self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_temp))
+        self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(
+            str(valid_temp))
         self.log(self.msg, "INFO")
 
         return self
 
-
-    def int_fail(self, msg ="Intentional Fail "):
+    def int_fail(self, msg="Intentional Fail "):
         self.msg = msg
         self.set_operation_result("failed", False, self.msg, "ERROR")
         self.check_return_status()
 
-    def debugg(self, msg ="Sample Debug Message"):
-        self.log(msg,"DEBUG")
-        
-    
+    def debugg(self, msg="Sample Debug Message"):
+        self.log(msg, "DEBUG")
+
 
 def main():
     """ main entry point for module execution
@@ -387,7 +385,7 @@ def main():
 
     ccc_tags = Tags(module)
     # ccc_tags.log("STARTING MESSAGE", "DEBUG")
-    #TODO: Change this to 2.3.7.9 in future when you get 2379 TB
+    # TODO: Change this to 2.3.7.9 in future when you get 2379 TB
     # TODO: Ask which version is minimum.
     if ccc_tags.compare_dnac_versions(ccc_tags.get_ccc_version(), "2.3.7.6") < 0:
         ccc_tags.msg = (
@@ -396,7 +394,8 @@ def main():
             "Fabric Sites/Zones and updating the Authentication profiles."
             .format(ccc_tags.get_ccc_version())
         )
-        ccc_tags.set_operation_result("failed", False, ccc_tags.msg, "ERROR").check_return_status()
+        ccc_tags.set_operation_result(
+            "failed", False, ccc_tags.msg, "ERROR").check_return_status()
 
     state = ccc_tags.params.get("state")
 
@@ -408,20 +407,15 @@ def main():
     ccc_tags.validate_input().check_return_status()
     ccc_tags.log(ccc_tags.validated_config, "DEBUG")
 
-
     ccc_tags.int_fail()
     config_verify = ccc_tags.params.get("config_verify")
     # ccc_tags.msg = "INTENTIONAL FAILING AT 374"
     # ccc_tags.set_operation_result("failed", False, ccc_tags.msg, "ERROR")
     # ccc_tags.check_return_status()
 
-
-
     # for config in ccc_tags.validated_config:
     #     ccc_tags.reset_values()
     #     ccc_tags.get_want(config).check_return_status()
-
-
 
     #     ccc_tags.get_have(config).check_return_status()
     #     ccc_tags.get_diff_state_apply[state](config).check_return_status()
