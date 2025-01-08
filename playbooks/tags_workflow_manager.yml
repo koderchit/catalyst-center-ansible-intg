@@ -1,0 +1,91 @@
+
+
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Create a Tag.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: true
+        config:
+          # - tags: # Creating / Updating / Deleting a Tag 
+            # - name: SampleName # String, Required
+            #   description: description # String, Optional
+            #   system_tag: false  # Boolean, Optional
+            #   force_delete: false #Conditional, Only in case of state deleted, True/False
+            #   device_rules:
+            #     rule_descriptions:
+            #       - rule_name: device_name  # String : {device_name, device_family, device_series, ip_address, location, version}
+            #         search_pattern: contains # String : {contains, equals, starts_with, ends_with}
+            #         value: "Border"
+            #         operation: "ILIKE"     # Not required by default    can be one of ILIKE, LIKE,(LIKE is case sensitive)       
+            #       - rule_name: device_family  
+            #         search_pattern: contains 
+            #         value: "9300" 
+            #         operation: "ILIKE" 
+            #   port_rules:
+            #     scope_description: # Required
+            #       grouping_category: TAG # String : {TAG, SITE}
+            #       inherit: true # Optional, Relevant only in case of site, true for site by default.
+            #       group_members: #Tag names for TAG and site name hierarchy for SITE
+            #         - sample_tag_name1/sample_site_name_hierarchy1
+            #         - sample_tag_name2/sample_site_name_hierarchy2
+            #     rule_descriptions:
+            #       - rule_name: speed  # Required, String : {speed, admin_status, port_name, operational_status, description)
+            #         search_pattern: contains # Required, String : {contains, equals, starts_with, ends_with}
+            #         value: "100000"    # Required
+            #         operation: "ILIKE"     # Optional, Not present on UI, API has the option to specify.           
+            #       - rule_name: port_name  
+            #         search_pattern: contains 
+            #         value: "tengig/1/0/1"   
+            #         operation: "ILIKE" 
+            #       - rule_name: admin_status 
+            #         search_pattern: contains 
+            #         value: "tengig/1/0/1"   
+            #         operation: "ILIKE"  
+
+            #   assign_members: # Assigning tags to a member.
+            #     device_details: 
+            #       - ip: [10.197.156.97, 10.197.156.98, 10.197.156.99]
+            #         hostname: ["host1", "host2", "host3"]
+            #         mac_address: ["mac_address1", "mac_address2", "mac_address3"]
+            #         serial_number: ["serial_number1", "serial_number2", "serial_number3"]
+
+            #         port_names: [FortyGigabitEthernet1/1/1, FortyGigabitEthernet1/1/2]  
+            #     site_details: 
+            #       - site_names: [Global/BLR, Global/HYD]
+            #         port_names: [FortyGigabitEthernet1/1/1, FortyGigabitEthernet1/1/2]
+              
+                  
+          - tags_membership: # Assigning tags to a member.
+              - tags:  [ Sample Tag 1,  Sample Tag 2]
+                #  If state is merged, the tags will be assigned to the devices/sites, if port_name is given, then it'll be assigned to those interface in the sites/devices.
+                # device_details: 
+                #   - ip: [10.197.156.97, 10.197.156.98, 10.197.156.99]
+                #     hostname: ["host1", "host2", "host3"]
+                #     mac_address: ["mac_address1", "mac_address2", "mac_address3"]
+                #     serial_number: ["serial_number1", "serial_number2", "serial_number3"]
+                #     port_names: [FortyGigabitEthernet1/1/1, FortyGigabitEthernet1/1/2]  
+                    
+                site_details: 
+                  # - site_names: [Global/BLR, Global/HYD]
+                  - port_names: sdsfd
+
+              
+            # For now we have to call APIs one by one for member assignment, the bulk api sdk support will be enabled from 3.1.1
+            
+
