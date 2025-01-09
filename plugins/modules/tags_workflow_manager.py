@@ -194,7 +194,7 @@ class Tags(DnacBase):
 
         temp_spec = {
             'tags': {
-                'type': 'list',
+                'type': 'dict',
                 'elements': 'dict',
                 'name': {'type': 'str', 'required': True},
                 'description': {'type': 'str'},
@@ -279,7 +279,7 @@ class Tags(DnacBase):
                 },
             },
             'tags_membership': {
-                'type': 'list',
+                'type': 'dict',
                 'tags': {
                     'type': 'list',
                     'elements': 'str',
@@ -348,6 +348,82 @@ class Tags(DnacBase):
 
         return self
 
+    def validate_params(config):
+        pass
+
+
+    def get_want(self, config):
+        """
+        Collects and validates the desired state configuration for fabric sites and zones from the given playbook configuration.
+        Args:
+            self (object): An instance of a class used for interacting with Cisco Catalyst Center.
+            config (dict): A dictionary containing the configuration for the desired state of fabric sites and zones.
+                        It should include a key "fabric_sites" with a list of dictionaries.
+        Returns:
+            self (object): The instance of the class with the updated `want` attribute containing the validated desired state
+                of fabric sites and zones and updating authentication profile template.
+        Description:
+            This function processes the provided playbook configuration to determine the desired state of fabric sites
+            and zones in the Cisco Catalyst Center.
+            The validated site information is stored in the `want` dictionary under the key "fabric_sites".
+            The `want` attribute of the instance is updated with this dictionary, representing the desired state
+            of the system. The function returns the instance for further processing or method chaining.
+        """
+
+        self.validate_params(config)
+
+        tags = config.get("tags")
+        tags_membership = config.get("tags_membership")
+
+        if not tags and not tags_membership:
+            self.msg = (
+                "No input provided in the playbook for tag operation "
+                "or updating tag memberships in Cisco Catalysyt Center."
+            )
+            self.set_operation_result(
+                "failed", False, self.msg, "ERROR").check_return_status()
+
+        if tags:
+            tags_info = []
+
+            for tag in tags:
+                tag_name = tag.get("name")
+                description = tag.get("description")
+
+                if not tag_name:
+                    self.msg = (
+                        "Required parameter 'name' is missing. It must be provided in the playbook for tag"
+                        "operations in Cisco Catalyst Center."
+                    )
+                    self.set_operation_result(
+                        "failed", False, self.msg, "ERROR").check_return_status()
+
+                if site_name.title() == "Global":
+                    self.msg = (
+                        "Unable to create/update the given site 'Global' to {0} as it is not allowed operation "
+                        "in the Cisco Catalyst Center."
+                    ).format(fabric_type)
+                    self.set_operation_result(
+                        "failed", False, self.msg, "ERROR").check_return_status()
+
+                if fabric_type not in ["fabric_site", "fabric_zone"]:
+                    self.msg = (
+                        "Invalid fabric_type '{0}' provided. Please use 'fabric_site' or 'fabric_zone' for fabric site/zone operations"
+                        " in Cisco Catalyst Center."
+                    ).format(fabric_type)
+                    self.set_operation_result(
+                        "failed", False, self.msg, "ERROR").check_return_status()
+
+                fabric_site_info.append(site)
+
+            want["fabric_sites"] = fabric_site_info
+
+        self.want = want
+        self.msg = "Successfully collected all parameters from the playbook for creating/updating the fabric sites/zones."
+        self.log("Desired State (want): {0}".format(str(self.want)), "INFO")
+
+        return self
+
     def int_fail(self, msg="Intentional Fail "):
         self.msg = msg
         self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -384,14 +460,12 @@ def main():
                            supports_check_mode=False)
 
     ccc_tags = Tags(module)
-    # ccc_tags.log("STARTING MESSAGE", "DEBUG")
-    # TODO: Change this to 2.3.7.9 in future when you get 2379 TB
-    # TODO: Ask which version is minimum.
+# TODO: Change this to 2379
     if ccc_tags.compare_dnac_versions(ccc_tags.get_ccc_version(), "2.3.7.6") < 0:
         ccc_tags.msg = (
             "The specified version '{0}' does not support the tagging feature. Supported versions start "
-            "  from '2.3.7.6' onwards. Version '2.3.7.6' introduces APIs for creating, updating and deleting the "
-            "Fabric Sites/Zones and updating the Authentication profiles."
+            "  from '2.3.7.9' onwards. Version '2.3.7.9' introduces APIs for creating, updating and deleting the "
+            "tags and Tag memberships."
             .format(ccc_tags.get_ccc_version())
         )
         ccc_tags.set_operation_result(
@@ -403,27 +477,24 @@ def main():
         ccc_tags.status = "invalid"
         ccc_tags.msg = "State {0} is invalid".format(state)
         ccc_tags.check_return_status()
-    ccc_tags.debugg("PRECHECK at 407")
+
+    # ccc_tags.debugg("PRECHECK at 407")
     ccc_tags.validate_input().check_return_status()
-    ccc_tags.log(ccc_tags.validated_config, "DEBUG")
-
-    ccc_tags.int_fail()
+    ccc_tags.debugg(f"Validated Config: {ccc_tags.validated_config}")
     config_verify = ccc_tags.params.get("config_verify")
-    # ccc_tags.msg = "INTENTIONAL FAILING AT 374"
-    # ccc_tags.set_operation_result("failed", False, ccc_tags.msg, "ERROR")
-    # ccc_tags.check_return_status()
+    ccc_tags.int_fail()
 
-    # for config in ccc_tags.validated_config:
-    #     ccc_tags.reset_values()
-    #     ccc_tags.get_want(config).check_return_status()
+    for config in ccc_tags.validated_config:
+        ccc_tags.reset_values()
+        ccc_tags.get_want(config).check_return_status()
 
-    #     ccc_tags.get_have(config).check_return_status()
-    #     ccc_tags.get_diff_state_apply[state](config).check_return_status()
-    #     if config_verify:
-    #         ccc_tags.verify_diff_state_apply[state](config).check_return_status()
+        # ccc_tags.get_have(config).check_return_status()
+        # ccc_tags.get_diff_state_apply[state](config).check_return_status()
+        # if config_verify:
+        #     ccc_tags.verify_diff_state_apply[state](config).check_return_status()
 
-    # # Invoke the API to check the status and log the output of each site/zone and authentication profile update on console.
-    # ccc_tags.update_site_zones_profile_messages().check_return_status()
+    # Invoke the API to check the status and log the output of each site/zone and authentication profile update on console.
+    ccc_tags.update_site_zones_profile_messages().check_return_status()
 
     module.exit_json(**ccc_tags.result)
 
