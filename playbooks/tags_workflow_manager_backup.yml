@@ -84,7 +84,7 @@
         config_verify: true/false
         config:
           - tags: # Creating / Updating / Deleting a Tag 
-            - name: SampleName # String, Required
+              name: SampleName # String, Required
               description: description # String, Optional
               system_tag: false  # Boolean, Optional
               force_delete: false #Conditional, Only in case of state deleted, True/False
@@ -182,7 +182,7 @@
         config_verify: true/false
         config:
           - tags:  
-              - name: SampleName # String, Required
+                name: SampleName # String, Required
                 description: description # String, Optional
                 system_tag: False  # Boolean, Optional, Default: False
               
@@ -213,7 +213,7 @@
         config_verify: true/False
         config:
           - tags: 
-              - name: SampleName # String, Required
+                name: SampleName # String, Required
                 description: description # String, Optional
                 system_tag: False  # Boolean, Optional, Default: False
                 assign_members: # Assigning tag to a members (device/port).
@@ -257,7 +257,7 @@
         config_verify: true/False
         config:
           - tags: 
-              - name: SampleName # String, Required
+                name: SampleName # String, Required
                 description: description # String, Optional
                 system_tag: False  # Boolean, Optional
                 device_rules:
@@ -299,7 +299,7 @@
         config_verify: true/False
         config:
           - tags: 
-              - name: SampleName # String, Required
+                name: SampleName # String, Required
                 description: description # String, Optional
                 system_tag: False  # Boolean, Optional, default: False
                 port_rules:
@@ -350,7 +350,7 @@
         config_verify: true/False
         config:
           - tags_membership: # Assigning tags to a member.
-              - tags:  [ Sample Tag 1,  Sample Tag 2]
+                tags:  [ Sample Tag 1,  Sample Tag 2]
                  # if port_name is given, then it'll be assigned to those ports in the sites/devices.
                 device_details: 
                   - ip: [10.197.156.97, 10.197.156.98, 10.197.156.99]
@@ -394,7 +394,7 @@
         config_verify: true/False
         config:
           - tags: 
-              - name: SampleName # String, Required 
+                name: SampleName # String, Required 
                 force_delete: False # Optional, If not provide, and if the device has any dynamic/static members, It'll fail the execution.
 
 
@@ -422,7 +422,7 @@
         config_verify: true/False
         config:
           - tags: 
-              - name: SampleName # String, Required
+                name: SampleName # String, Required
                 device_rules:
                   rule_descriptions:
                     - rule_name: device_name  # String : {device_name, device_family, device_series, ip_address, location, version}
@@ -460,7 +460,7 @@
         config_verify: true/False
         config:
           - tags: # Creating / Updating / Deleting a Tag 
-            - name: SampleName # String, Required
+              name: SampleName # String, Required
               port_rules:
                 scope_description: # Required
                   grouping_category: TAG # String : {TAG, SITE}
@@ -504,7 +504,7 @@
         config_verify: true/False
         config:
           - tags_membership: # Assigning tags to a member.
-              - tags:  [ Sample Tag 1,  Sample Tag 2]
+                tags:  [ Sample Tag 1,  Sample Tag 2]
                 device_details: 
                   - ip: [10.197.156.97, 10.197.156.98, 10.197.156.99]
                     hostname: ["host1", "host2", "host3"]
