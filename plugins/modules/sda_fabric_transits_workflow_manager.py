@@ -171,8 +171,8 @@ EXAMPLES = r"""
       transit_type: SDA_LISP_BGP_TRANSIT
       sda_transit_settings:
         control_plane_network_device_ips:
-        - string
-        - string
+        - 10.0.0.1
+        - 10.0.0.2
 
 - name: Create SDA fabric transit of transit_type SDA_LISP_PUB_SUB_TRANSIT
   cisco.dnac.sda_fabric_transits_workflow_manager:
@@ -194,10 +194,10 @@ EXAMPLES = r"""
       sda_transit_settings:
         is_multicast_over_transit_enabled: false
         control_plane_network_device_ips:
-        - string
-        - string
-        - string
-        - string
+        - 10.0.0.1
+        - 10.0.0.2
+        - 10.0.0.3
+        - 10.0.0.4
 
 - name: Update SDA fabric transit of transit_type SDA_LISP_BGP_TRANSIT
   cisco.dnac.sda_fabric_transits_workflow_manager:
@@ -218,8 +218,8 @@ EXAMPLES = r"""
       transit_type: SDA_LISP_BGP_TRANSIT
       sda_transit_settings:
         control_plane_network_device_ips:
-        - string
-        - string
+        - 10.0.0.1
+        - 10.0.0.2
 
 - name: Update the multicast over transit
   cisco.dnac.sda_fabric_transits_workflow_manager:
@@ -260,9 +260,9 @@ EXAMPLES = r"""
       transit_type: SDA_LISP_PUB_SUB_TRANSIT
       sda_transit_settings:
         control_plane_network_device_ips:
-        - string
-        - string
-        - string
+        - 10.0.0.1
+        - 10.0.0.2
+        - 10.0.0.3
 
 - name: Delete SDA fabric transit
   cisco.dnac.sda_fabric_transits_workflow_manager:
@@ -292,10 +292,10 @@ response_1:
   sample: >
     {
       "response": {
-        "taskId": "string",
-        "url": "string"
+        "taskId": "str",
+        "url": "str"
       },
-      "version": "string"
+      "version": "str"
     }
 
 # Case_2: Successful updation of SDA fabric transit
@@ -306,10 +306,10 @@ response_2:
   sample: >
     {
       "response": {
-        "taskId": "string",
-        "url": "string"
+        "taskId": "str",
+        "url": "str"
       },
-      "version": "string"
+      "version": "str"
     }
 
 # Case_3: Successful deletion of SDA fabric transit
@@ -320,10 +320,10 @@ response_3:
   sample: >
     {
       "response": {
-        "taskId": "string",
-        "url": "string"
+        "taskId": "str",
+        "url": "str"
       },
-      "version": "string"
+      "version": "str"
     }
 """
 

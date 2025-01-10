@@ -376,10 +376,10 @@ response_1:
   sample: >
     {
       "response": {
-        "taskId": "string",
-        "url": "string"
+        "taskId": "str",
+        "url": "str"
       },
-      "version": "string"
+      "version": "str"
     }
 
 # Case_2: Successful updation of Authentication and Policy Server.
@@ -390,10 +390,10 @@ response_2:
   sample: >
     {
       "response": {
-        "taskId": "string",
-        "url": "string"
+        "taskId": "str",
+        "url": "str"
       },
-      "version": "string"
+      "version": "str"
     }
 
 # Case_3: Successful creation/updation of network
@@ -404,10 +404,10 @@ response_3:
   sample: >
     {
       "response": {
-        "taskId": "string",
-        "url": "string"
+        "taskId": "str",
+        "url": "str"
       },
-      "version": "string"
+      "version": "str"
     }
 """
 
