@@ -13,7 +13,7 @@
         dnac_verify: "{{ dnac_verify }}"
         dnac_debug: "{{ dnac_debug }}"
         dnac_version: "{{ dnac_version }}"
-        dnac_log: True
+        dnac_log: false
         dnac_log_level: DEBUG
         dnac_log_append: True
         dnac_log_file_path: "{{ dnac_log_file_path }}"
@@ -36,7 +36,7 @@
         dnac_verify: "{{ dnac_verify }}"
         dnac_debug: "{{ dnac_debug }}"
         dnac_version: "{{ dnac_version }}"
-        dnac_log: True
+        dnac_log: false
         dnac_log_level: DEBUG
         dnac_log_append: True
         dnac_log_file_path: "{{ dnac_log_file_path }}"
@@ -60,7 +60,7 @@
         dnac_verify: "{{ dnac_verify }}"
         dnac_debug: "{{ dnac_debug }}"
         dnac_version: "{{ dnac_version }}"
-        dnac_log: True
+        dnac_log: false
         dnac_log_level: DEBUG
         dnac_log_append: True
         dnac_log_file_path: "{{ dnac_log_file_path }}"
@@ -87,7 +87,7 @@
         dnac_verify: "{{ dnac_verify }}"
         dnac_debug: "{{ dnac_debug }}"
         dnac_version: "{{ dnac_version }}"
-        dnac_log: True
+        dnac_log: false
         dnac_log_level: DEBUG
         dnac_log_append: True
         dnac_log_file_path: "{{ dnac_log_file_path }}"

@@ -400,7 +400,7 @@ class PnP(DnacBase):
         self.validated_config = valid_pnp
         self.msg = "Successfully validated playbook config params: {0}".format(str(valid_pnp))
         self.log(str(self.msg), "INFO")
-        self.status = "success"
+        self.status = "failed"
 
         return self
 

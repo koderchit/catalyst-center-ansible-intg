@@ -420,7 +420,7 @@ class NetworkCompliance(DnacBase):
 
         self.msg = "Successfully validated playbook configuration parameters using 'validated_input': {0}".format(str(valid_temp))
         self.log(self.msg, "INFO")
-        self.status = "success"
+        self.status = "failed"
 
         return self
 

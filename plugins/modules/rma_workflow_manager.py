@@ -470,7 +470,7 @@ class DeviceReplacement(DnacBase):
         self.log("Validated config: {0}".format(self.pprint(self.validated_config)), "INFO")
         self.msg = "Successfully validated playbook config params:{0}".format(str(self.validated_config[0]))
         self.log(self.msg, "INFO")
-        self.status = "success"
+        self.status = "failed"
         return self
 
     def get_want(self, config):

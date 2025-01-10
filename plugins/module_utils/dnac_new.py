@@ -2354,6 +2354,7 @@ def validate_list(item, param_spec, param_name, invalid_params, module= None):
             if len(keys_list) == 1:
                 return validation.check_type_list(item)
             
+            temp_dict = {keys_list[1]: param_spec[keys_list[1]]}
             try:
                 if param_spec['elements']:
                     if param_spec['elements']=='dict':
@@ -2376,11 +2377,8 @@ def validate_list(item, param_spec, param_name, invalid_params, module= None):
                             "{0} is not of the same datatype as expected which is {1}".format(item, get_spec_type)
                         )
             except Exception as e:
-                common_defaults = {'type', 'elements', 'required', 'default', 'choices', 'no_log'}
-                filtered_param_spec = {key: value for key, value in param_spec.items() if key not in common_defaults}
-                if filtered_param_spec:
-                    item, list_invalid_params = validate_list_of_dicts(item, filtered_param_spec)
-                    invalid_params.extend(list_invalid_params)
+                item, list_invalid_params = validate_list_of_dicts(item, temp_dict)
+                invalid_params.extend(list_invalid_params)
         else:
             invalid_params.append("{0} : is not a valid list".format(item))
     except Exception as e:

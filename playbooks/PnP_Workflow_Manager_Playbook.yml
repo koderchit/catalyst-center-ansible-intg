@@ -23,7 +23,7 @@
     - name: Import devices in bulk
       cisco.dnac.pnp_workflow_manager:
         <<: *dnac_login
-        dnac_log: True
+        dnac_log: false
         state: merged
         config_verify: True
         config:
@@ -45,7 +45,7 @@
     - name: Add a new device and claim it
       cisco.dnac.pnp_workflow_manager:
         <<: *dnac_login
-        dnac_log: True
+        dnac_log: false
         state: merged
         config:
           - site_name: Global/USA/San Francisco/BGL_18
@@ -59,7 +59,7 @@
     - name: Claim a pre-added switch, apply a template, and perform an image upgrade for a specific site
       cisco.dnac.pnp_workflow_manager:
         <<: *dnac_login
-        dnac_log: True
+        dnac_log: false
         state: merged
         config:
           - site_name: Global/USA/San Francisco/BGL_18
@@ -78,7 +78,7 @@
     - name: Claim an existing Wireless Controller, apply a template, and upgrade its image for a specified site
       cisco.dnac.pnp_workflow_manager:
         <<: *dnac_login
-        dnac_log: True
+        dnac_log: false
         state: merged
         config:
           - site_name: Global/USA/San Francisco/BGL_18
@@ -101,7 +101,7 @@
     - name: Remove multiple devices from the PnP dashboard safely (ignores non-existent devices)
       cisco.dnac.pnp_workflow_manager:
         <<: *dnac_login
-        dnac_log: True
+        dnac_log: false
         state: deleted
         config_verify: True
         config:

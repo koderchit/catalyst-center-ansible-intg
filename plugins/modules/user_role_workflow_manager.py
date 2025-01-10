@@ -956,9 +956,9 @@ class UserandRole(DnacBase):
                 return self
 
             self.validated_config = valid_param
-            self.msg = "Successfully validated playbook config params: {0}".format(str(valid_param[0]))
+            self.msg = "Successfully validated playbook config params: {0}".format(str(valid_param))
             self.log(self.msg, "INFO")
-            self.status = "success"
+            self.status = "failed"
             return self
 
         if "user_details" in config and "username" in user_role_details[0] or "email" in user_role_details[0]:
@@ -1003,7 +1003,7 @@ class UserandRole(DnacBase):
                 self.validated_config = valid_param
                 self.msg = "Successfully validated playbook config params:{0}".format(str(valid_param[0]))
                 self.log(self.msg, "INFO")
-                self.status = "success"
+                self.status = "failed"
                 return self
 
         self.msg = (

@@ -1104,9 +1104,9 @@ class Events(DnacBase):
             return self
 
         self.validated_config = valid_temp
-        self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_temp))
+        self.msg = "Successfully validated playbook config params:{0}".format(self.validated_config)
         self.log(self.msg, "INFO")
-        self.status = "success"
+        self.status = "failed"
 
         return self
 

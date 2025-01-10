@@ -513,7 +513,7 @@ class Site(DnacBase):
         self.msg = "Successfully validated playbook config params: {0}".format(
             str(valid_temp))
         self.log(self.msg, "INFO")
-        self.status = "success"
+        self.status = "failed"
 
         return self
 

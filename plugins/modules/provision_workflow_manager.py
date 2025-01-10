@@ -424,7 +424,7 @@ class Provision(DnacBase):
         self.validated_config = valid_provision
         self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_provision))
         self.log(str(self.msg), "INFO")
-        self.status = "success"
+        self.status = "failed"
         return self
 
     def get_dev_type(self):

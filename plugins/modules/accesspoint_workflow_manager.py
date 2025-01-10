@@ -1789,9 +1789,9 @@ class Accesspoint(DnacBase):
             return self
 
         self.validated_config = valid_param
-        self.msg = "Successfully validated playbook config params:{0}".format(self.pprint(valid_param))
+        self.msg = "Successfully validated playbook config params:{0}".format(valid_param)
         self.log(self.msg, "INFO")
-        self.status = "success"
+        self.status = "failed"
         return self
 
     def get_want(self, ap_config):
@@ -4150,19 +4150,19 @@ def main():
     ccc_network = Accesspoint(module)
     state = ccc_network.params.get("state")
 
-    if state not in ccc_network.supported_states:
-        ccc_network.status = "invalid"
-        ccc_network.msg = "State {0} is invalid".format(state)
-        ccc_network.check_return_status()
+    # if state not in ccc_network.supported_states:
+    #     ccc_network.status = "invalid"
+    #     ccc_network.msg = "State {0} is invalid".format(state)
+    #     ccc_network.check_return_status()
 
-    if ccc_network.compare_dnac_versions(ccc_network.get_ccc_version(), "2.3.5.3") < 0:
-        ccc_network.status = "failed"
-        ccc_network.msg = (
-            "The specified version '{0}' does not support the access point workflow feature."
-            "Supported version(s) start from '2.3.5.3' onwards.".format(ccc_network.get_ccc_version())
-        )
-        ccc_network.log(ccc_network.msg, "ERROR")
-        ccc_network.check_return_status()
+    # if ccc_network.compare_dnac_versions(ccc_network.get_ccc_version(), "2.3.5.3") < 0:
+    #     ccc_network.status = "failed"
+    #     ccc_network.msg = (
+    #         "The specified version '{0}' does not support the access point workflow feature."
+    #         "Supported version(s) start from '2.3.5.3' onwards.".format(ccc_network.get_ccc_version())
+    #     )
+    #     ccc_network.log(ccc_network.msg, "ERROR")
+    #     ccc_network.check_return_status()
 
     ccc_network.validate_input_yml().check_return_status()
     config_verify = ccc_network.params.get("config_verify")

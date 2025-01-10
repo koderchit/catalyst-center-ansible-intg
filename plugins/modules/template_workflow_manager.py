@@ -1350,7 +1350,8 @@ class Template(DnacBase):
 
         self.validated_config = valid_temp
         self.log("Successfully validated playbook config params: {0}".format(valid_temp), "INFO")
-        self.msg = "Successfully validated input"
+        self.msg = "Successfully validated playbook config params:{0}".format(self.validated_config)
+
         self.status = "success"
         return self
 
@@ -2402,7 +2403,7 @@ class Template(DnacBase):
                 return self
 
         self.msg = "Input validated for merging"
-        self.status = "success"
+        self.status = "failed"
         return self
 
     def get_export_template_values(self, export_values):

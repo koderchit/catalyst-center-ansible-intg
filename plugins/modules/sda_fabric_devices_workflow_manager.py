@@ -951,11 +951,11 @@ class FabricDevices(DnacBase):
         temp_spec = {
             "fabric_devices": {
                 "type": 'dict',
-                "fabric_name": {"type": 'string'},
+                "fabric_name": {"type": 'str'},
                 "device_config": {
                     "type": 'list',
                     "elements": 'dict',
-                    "device_ip": {"type": 'string'},
+                    "device_ip": {"type": 'str'},
                     "device_roles": {
                         "type": 'list',
                         "elements": 'str',
@@ -965,41 +965,41 @@ class FabricDevices(DnacBase):
                         "elements": 'dict',
                         "layer3_settings": {
                             "type": 'dict',
-                            "local_autonomous_system_number": {"type": 'string'},
+                            "local_autonomous_system_number": {"type": 'str'},
                             "is_default_exit": {"type": 'bool'},
                             "import_external_routes": {"type": 'bool'},
-                            "border_priority": {"type": 'integer'},
-                            "prepend_autonomous_system_count": {"type": 'integer'}
+                            "border_priority": {"type": 'int'},
+                            "prepend_autonomous_system_count": {"type": 'int'}
                         },
                         "layer3_handoff_ip_transit": {
                             "type": 'list',
                             "elements": 'dict',
-                            "transit_network_name": {"type": 'string'},
-                            "interface_name": {"type": 'string'},
-                            "external_connectivity_ip_pool_name": {"type": 'string'},
-                            "virtual_network_name": {"type": 'string'},
-                            "vlan_id": {"type": 'integer'},
-                            "tcp_mss_adjustment": {"type": 'integer'},
-                            "local_ip_address": {"type": 'string'},
-                            "remote_ip_address": {"type": 'string'},
-                            "local_ipv6_address": {"type": 'string'},
-                            "remote_ipv6_address": {"type": 'string'},
+                            "transit_network_name": {"type": 'str'},
+                            "interface_name": {"type": 'str'},
+                            "external_connectivity_ip_pool_name": {"type": 'str'},
+                            "virtual_network_name": {"type": 'str'},
+                            "vlan_id": {"type": 'int'},
+                            "tcp_mss_adjustment": {"type": 'int'},
+                            "local_ip_address": {"type": 'str'},
+                            "remote_ip_address": {"type": 'str'},
+                            "local_ipv6_address": {"type": 'str'},
+                            "remote_ipv6_address": {"type": 'str'},
                         },
                         "layer3_handoff_sda_transit": {
                             "type": 'list',
                             "elements": 'dict',
-                            "transit_network_name": {"type": 'string'},
-                            "affinity_id_prime": {"type": 'integer'},
-                            "affinity_id_decider": {"type": 'integer'},
+                            "transit_network_name": {"type": 'str'},
+                            "affinity_id_prime": {"type": 'int'},
+                            "affinity_id_decider": {"type": 'int'},
                             "connected_to_internet": {"type": 'bool'},
                             "is_multicast_over_transit_enabled": {"type": 'bool'}
                         },
                         "layer2_handoff": {
                             "type": 'list',
                             "elements": 'dict',
-                            "interface_name": {"type": 'string'},
-                            "internal_vlan_id": {"type": 'integer'},
-                            "external_vlan_id": {"type": 'integer'}
+                            "interface_name": {"type": 'str'},
+                            "internal_vlan_id": {"type": 'int'},
+                            "external_vlan_id": {"type": 'int'}
                         }
                     }
                 }
@@ -1018,9 +1018,10 @@ class FabricDevices(DnacBase):
 
         self.validated_config = valid_temp
         self.log("Successfully validated playbook config params: {valid_temp}"
-                 .format(valid_temp=valid_temp), "INFO")
-        self.msg = "Successfully validated input from the playbook."
-        self.status = "success"
+                 .format(valid_temp=valid_temp), "INFO")        
+        self.msg = "Successfully validated playbook config params:{0}".format(self.validated_config)
+
+        self.status = "failed"
         return self
 
     def get_obj_params(self, get_object):

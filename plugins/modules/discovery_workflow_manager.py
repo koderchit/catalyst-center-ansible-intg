@@ -717,9 +717,9 @@ class Discovery(DnacBase):
             return self
 
         self.validated_config = valid_discovery
-        self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_discovery))
+        self.msg = "Successfully validated playbook config params:{0}".format(self.validated_config)
         self.log(str(self.msg), "INFO")
-        self.status = "success"
+        self.status = "failed"
         return self
 
     def validate_ip4_address_list(self):

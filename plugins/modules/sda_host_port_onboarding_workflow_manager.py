@@ -796,7 +796,7 @@ class SDAHostPortOnboarding(DnacBase):
         # Set the validated configuration and update the result with success status
         self.validated_config = valid_temp
         self.msg = "Successfully validated playbook configuration parameters using 'validated_input': {0}".format(str(valid_temp))
-        self.set_operation_result("success", False, self.msg, "INFO")
+        self.set_operation_result("failed", False, self.msg, "INFO")
         return self
 
     def validate_device_exists_and_reachable(self, ip_address, hostname):

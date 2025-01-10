@@ -13,8 +13,8 @@ events_notification:
       method: "POST"
       trust_cert: False
     email_destination:
-      from_email: "test@cisco.com"
-      to_email: "abmahesh@cisco.com"
+      sender_email: "test@cisco.com"
+      recipient_email: "abmahesh@cisco.com"
       subject: "Ansible testing"
       primary_smtp_config:
         server_address: "outbound.cisco.com"

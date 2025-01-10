@@ -7,7 +7,7 @@
     - "input_events_and_notification.yml"
     - "credentials.yml"
   tasks:
-    - name: Add/update channels with destination and create/update events in Cisco Catalyst Center.
+    - name: Addupdate channels with destination and createupdate events in Cisco Catalyst Center.
       cisco.dnac.events_and_notifications_workflow_manager:
         dnac_host: "{{dnac_host}}"
         dnac_username: "{{dnac_username}}"
@@ -17,7 +17,7 @@
         dnac_version: "{{dnac_version}}"
         dnac_debug: "{{dnac_debug}}"
         dnac_log_level: DEBUG
-        dnac_log: true
+        dnac_log: false
         config_verify: true
         state: merged
         config:

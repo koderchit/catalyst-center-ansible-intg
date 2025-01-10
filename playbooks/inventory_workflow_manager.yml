@@ -7,7 +7,7 @@
     - "input_inventory.yml"
     - "credentials.yml"
   tasks:
-    - name: Add/Update/Resync/Delete the devices in Cisco DNA Center Inventory.
+    - name: add in Cisco DNA Center Inventory.
       cisco.dnac.inventory_workflow_manager:
         dnac_host: "{{dnac_host}}"
         dnac_username: "{{dnac_username}}"
@@ -17,7 +17,7 @@
         dnac_version: "{{dnac_version}}"
         dnac_debug: "{{dnac_debug}}"
         dnac_log_level: DEBUG
-        dnac_log: true
+        dnac_log: false
         config_verify: true
         state: merged
         config:

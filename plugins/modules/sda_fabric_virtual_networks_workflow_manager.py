@@ -606,6 +606,7 @@ class VirtualNetwork(DnacBase):
                 'elements': 'dict',
                 'vn_name': {'type': 'str'},
                 'fabric_site_location': {
+                    'type': 'dict',
                     'site_name_hierarchy': {'type': 'str'},
                     'fabric_type': {'type': 'str'}
                 },
@@ -637,10 +638,11 @@ class VirtualNetwork(DnacBase):
             self.msg = "The playbook contains invalid parameters: {0}".format(invalid_params)
             self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
 
-        self.validated_config = valid_temp
-        self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_temp))
+        self.validated_config = valid_temp        
+        self.msg = "Successfully validated playbook configuration parameters using 'validated_input': {0}".format(str(valid_temp))
+
         self.log(self.msg, "INFO")
-        self.status = "success"
+        self.status = "failed"
 
         return self
 

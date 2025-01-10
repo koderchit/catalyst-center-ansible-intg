@@ -479,8 +479,9 @@ class DeviceConfigsBackup(DnacBase):
 
         # If validation is successful, update the result
         self.validated_config = valid_device_configs_backup
-        self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_device_configs_backup))
-        self.status = "success"
+        # self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(str(valid_device_configs_backup))
+        self.msg = "Successfully validated playbook config params:{0}".format(self.validated_config)
+        self.status = "falied"
         return self
 
     def get_device_list_params(self, config):
@@ -1139,11 +1140,11 @@ def main():
     # Get the state parameter from the provided parameters
     state = ccc_device_configs_backup.params.get("state")
 
-    # Check if the state is valid
-    if state not in ccc_device_configs_backup.supported_states:
-        ccc_device_configs_backup.status = "invalid"
-        ccc_device_configs_backup.msg = "State {0} is invalid".format(state)
-        ccc_device_configs_backup.check_return_status()
+    # # Check if the state is valid
+    # if state not in ccc_device_configs_backup.supported_states:
+    #     ccc_device_configs_backup.status = "invalid"
+    #     ccc_device_configs_backup.msg = "State {0} is invalid".format(state)
+    #     ccc_device_configs_backup.check_return_status()
 
     # Get the config_verify parameter from the provided parameters
     config_verify = ccc_device_configs_backup.params.get("config_verify")

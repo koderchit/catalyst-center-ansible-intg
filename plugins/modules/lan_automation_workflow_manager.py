@@ -573,7 +573,6 @@ class LanAutomation(DnacBase):
                 "type": "dict",
                 "required": False,
                 "elements": "dict",
-                "options": {
                     "discovered_device_site_name_hierarchy": {
                         "type": "str",
                         "required": True
@@ -595,17 +594,17 @@ class LanAutomation(DnacBase):
                         "type": "list",
                         "required": True,
                         "elements": "dict",
-                        "options": {
-                            "ip_pool_name": {
-                                "type": "str",
-                                "required": True
-                            },
-                            "ip_pool_role": {
-                                "type": "str",
-                                "required": True,
-                                "choices": ["MAIN_POOL", "PHYSICAL_LINK_POOL"]
-                            }
+                        
+                        "ip_pool_name": {
+                            "type": "str",
+                            "required": True
+                        },
+                        "ip_pool_role": {
+                            "type": "str",
+                            "required": True,
+                            "choices": ["MAIN_POOL", "PHYSICAL_LINK_POOL"]
                         }
+                    
                     },
                     "multicast_enabled": {
                         "type": "bool",
@@ -626,36 +625,36 @@ class LanAutomation(DnacBase):
                         "required": False
                     },
                     "discovery_level": {
-                        "type": "integer",
+                        "type": "int",
                         "required": False,
                         "default": 2
                     },
                     "discovery_timeout": {
-                        "type": "integer",
+                        "type": "int",
                         "required": False
                     },
                     "discovery_devices": {
                         "type": "list",
                         "required": False,
                         "elements": "dict",
-                        "options": {
-                            "device_serial_number": {
-                                "type": "str",
-                                "required": True
-                            },
-                            "device_host_name": {
-                                "type": "str",
-                                "required": False
-                            },
-                            "device_site_name_hierarchy": {
-                                "type": "str",
-                                "required": False
-                            },
-                            "device_management_ip_address": {
-                                "type": "str",
-                                "required": False
-                            }
+                        
+                        "device_serial_number": {
+                            "type": "str",
+                            "required": True
+                        },
+                        "device_host_name": {
+                            "type": "str",
+                            "required": False
+                        },
+                        "device_site_name_hierarchy": {
+                            "type": "str",
+                            "required": False
+                        },
+                        "device_management_ip_address": {
+                            "type": "str",
+                            "required": False
                         }
+                        
                     },
                     "launch_and_wait": {
                         "type": "bool",
@@ -672,18 +671,18 @@ class LanAutomation(DnacBase):
                         "required": False,
                         "elements": "str"
                     },
-                }
+                
             },
             "lan_automated_device_update": {
                 "type": "dict",
                 "required": False,
                 "elements": "dict",
-                "options": {
+                
                     "loopback_update_device_list": {
                         "type": "list",
                         "required": False,
                         "elements": "dict",
-                        "options": {
+                        
                             "device_management_ip_address": {
                                 "type": "str",
                                 "required": True
@@ -692,13 +691,12 @@ class LanAutomation(DnacBase):
                                 "type": "str",
                                 "required": True
                             }
-                        }
                     },
                     "hostname_update_devices": {
                         "type": "list",
                         "required": False,
                         "elements": "dict",
-                        "options": {
+                        
                             "device_management_ip_address": {
                                 "type": "str",
                                 "required": True
@@ -707,12 +705,11 @@ class LanAutomation(DnacBase):
                                 "type": "str",
                                 "required": True
                             }
-                        }
+                    
                     },
                     "link_add": {
                         "type": "dict",
                         "required": False,
-                        "options": {
                             "source_device_management_ip_address": {
                                 "type": "str",
                                 "required": True
@@ -733,12 +730,10 @@ class LanAutomation(DnacBase):
                                 "type": "str",
                                 "required": True
                             }
-                        }
                     },
                     "link_delete": {
                         "type": "dict",
                         "required": False,
-                        "options": {
                             "source_device_management_ip_address": {
                                 "type": "str",
                                 "required": True
@@ -755,9 +750,9 @@ class LanAutomation(DnacBase):
                                 "type": "str",
                                 "required": True
                             }
-                        }
+                        
                     }
-                }
+                
             }
         }
 
@@ -776,7 +771,7 @@ class LanAutomation(DnacBase):
         self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(
             str(valid_lan_automation))
         self.log(str(self.msg), "INFO")
-        self.status = "success"
+        self.status = "failed"
         return self
 
     def get_have(self, config):

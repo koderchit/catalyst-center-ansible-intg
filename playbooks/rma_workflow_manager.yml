@@ -14,7 +14,7 @@
         dnac_port: "{{ dnac_port }}"
         dnac_version: "{{ dnac_version }}"
         dnac_debug: "{{ dnac_debug }}"
-        dnac_log: true
+        dnac_log: false
         dnac_log_level: DEBUG
         config_verify: true
         resync_retry_count: 1000  

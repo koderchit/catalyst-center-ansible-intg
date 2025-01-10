@@ -285,7 +285,7 @@ class SDAExtranetPolicies(DnacBase):
         # Set the validated configuration and update the result with success status
         self.validated_config = valid_temp
         self.msg = "Successfully validated playbook configuration parameters using 'validated_input': {0}".format(str(valid_temp))
-        self.set_operation_result("success", False, self.msg, "INFO")
+        self.set_operation_result("failed", False, self.msg, "INFO")
         return self
 
     def get_fabric_ids_list(self, site_details):

@@ -375,17 +375,17 @@ class FabricTransit(DnacBase):
             "sda_fabric_transits": {
                 "type": 'list',
                 "elements": 'dict',
-                "name": {"type": 'string'},
-                "transit_type": {"type": 'string', "choices": ["IP_BASED_TRANSIT", "SDA_LISP_PUB_SUB_TRANSIT", "SDA_LISP_BGP_TRANSIT"]},
+                "name": {"type": 'str'},
+                "transit_type": {"type": 'str', "choices": ["IP_BASED_TRANSIT", "SDA_LISP_PUB_SUB_TRANSIT", "SDA_LISP_BGP_TRANSIT"]},
                 "ip_transit_settings": {
                     "type": 'dict',
-                    "routing_protocol_name": {"type": 'string', "choices": ["BGP"]},
-                    "autonomous_system_number": {"type": 'integer'}
+                    "routing_protocol_name": {"type": 'str', "choices": ["BGP"]},
+                    "autonomous_system_number": {"type": 'int'}
                 },
                 "sda_transit_settings": {
                     "type": 'dict',
                     "is_multicast_over_transit_enabled": {"type": 'bool'},
-                    "control_plane_network_device_ips": {"type": 'list', "elements": 'string'}
+                    "control_plane_network_device_ips": {"type": 'list', "elements": 'str'}
                 }
             }
         }
@@ -403,8 +403,9 @@ class FabricTransit(DnacBase):
         self.validated_config = valid_temp
         self.log("Successfully validated playbook config params: {valid_temp}"
                  .format(valid_temp=valid_temp), "INFO")
-        self.msg = "Successfully validated input from the playbook."
-        self.status = "success"
+        self.msg = "Successfully validated playbook config params:{0}".format(self.validated_config)
+
+        self.status = "failed"
         return self
 
     def requires_update(self, have, want, obj_params):
