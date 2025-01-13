@@ -10,6 +10,7 @@ from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
     validate_list_of_dicts,
 )
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common import validation
 
 __metaclass__ = type
 __author__ = ("Archit Soni, Madhan Sankaranarayanan")
@@ -173,6 +174,11 @@ class Tags(DnacBase):
         # self.update_auth_profile, self.no_update_profile = [], []
         # self.delete_site, self.delete_zone, self.absent_site, self.absent_zone = [], [], [], []
 
+
+
+
+
+
     def validate_input(self):
         """
         Validate the fields provided in the playbook.
@@ -207,10 +213,10 @@ class Tags(DnacBase):
                         'type': 'list',
                         'elements': 'dict',
                         'required': True,
-                        'rule_name': {'type': 'str', 'required': True, 'choices': ['device_name', 'device_family', 'device_series', 'ip_address', 'location', 'version']},
-                        'search_pattern': {'type': 'str', 'required': True, 'choices': ['contains', 'equals', 'starts_with', 'ends_with']},
+                        'rule_name': {'type': 'str', 'required': True},
+                        'search_pattern': {'type': 'str', 'required': True},
                         'value': {'type': 'str', 'required': True},
-                        'operation': {'type': 'str', 'default': 'ILIKE', 'choices': ['ILIKE', 'LIKE']}
+                        'operation': {'type': 'str', 'default': 'ILIKE'}
                     }
                 },
                 'port_rules': {
@@ -219,22 +225,22 @@ class Tags(DnacBase):
                     'scope_description': {
                         'type': 'dict',
                         'elements': 'dict',
-                        'required': True,
-                        'grouping_category': {'type': 'str'},
+                        'grouping_category': {'type': 'str','required': True},
                         'inherit': {'type': 'bool', 'default': False},
                         'group_members': {
                             'type': 'list',
-                            'elements': 'str'
+                            'elements': 'str',
+                            'required': True
                         }
                     },
                     'rule_descriptions': {
                         'type': 'list',
                         'elements': 'dict',
                         'required': True,
-                        'rule_name': {'type': 'str', 'required': True, 'choices': ['speed', 'admin_status', 'port_name', 'operational_status', 'description']},
-                        'search_pattern': {'type': 'str', 'required': True, 'choices': ['contains', 'equals', 'starts_with', 'ends_with']},
+                        'rule_name': {'type': 'str', 'required': True},
+                        'search_pattern': {'type': 'str', 'required': True},
                         'value': {'type': 'str', 'required': True},
-                        'operation': {'type': 'str', 'default': 'ILIKE', 'choices': ['ILIKE', 'LIKE']}
+                        'operation': {'type': 'str', 'default': 'ILIKE'}
                     }
                 },
                 'assign_members': {
@@ -322,7 +328,6 @@ class Tags(DnacBase):
                     }
                 }
             }
-
         }
 
         if not self.config:
@@ -330,7 +335,7 @@ class Tags(DnacBase):
             self.set_operation_result("failed", False, self.msg, "ERROR")
             return self
         # Validate device params
-        valid_temp, invalid_params = validate_list_of_dicts(
+        valid_temp, invalid_params = self.validate_list_of_dicts(
             self.config, temp_spec
         )
 
@@ -348,10 +353,612 @@ class Tags(DnacBase):
 
         return self
 
-    def validate_params(config):
-        pass
+    def validate_str(self,item, param_spec, param_name, invalid_params, module= None):
+        """
+        This function checks that the input `item` is a valid string and confirms to
+        the constraints specified in `param_spec`. If the string is not valid or does
+        not meet the constraints, an error message is added to `invalid_params`.
+
+        Args:
+            item (str): The input string to be validated.
+            param_spec (dict): The parameter's specification, including validation constraints.
+            param_name (str): The name of the parameter being validated.
+            invalid_params (list): A list to collect validation error messages.
+
+        Returns:
+            str: The validated and possibly normalized string.
+
+        Example `param_spec`:
+            {
+                "type": "str",
+                "length_max": 255 # Optional: maximum allowed length
+            }
+        """
+
+        item = validation.check_type_str(item)
+        if param_spec.get("length_max"):
+            if 1 <= len(item) <= param_spec.get("length_max"):
+                return item
+            else:
+                invalid_params.append(
+                    "{0}:{1} : The string exceeds the allowed "
+                    "range of max {2} char".format(param_name, item, param_spec.get("length_max"))
+                )
+        return item
+
+    def validate_integer_within_range(self,item, param_spec, param_name, invalid_params, module= None):
+        """
+        This function checks that the input `item` is a valid integer and conforms to
+        the constraints specified in `param_spec`. If the integer is not valid or does
+        not meet the constraints, an error message is added to `invalid_params`.
+
+        Args:
+            item (int): The input integer to be validated.
+            param_spec (dict): The parameter's specification, including validation constraints.
+            param_name (str): The name of the parameter being validated.
+            invalid_params (list): A list to collect validation error messages.
+
+        Returns:
+            int: The validated integer.
+
+        Example `param_spec`:
+            {
+                "type": "int",
+                "range_min": 1,     # Optional: minimum allowed value
+                "range_max": 100    # Optional: maximum allowed value
+            }
+        """
+        try:
+            item = validation.check_type_int(item)
+        except TypeError as e:
+            invalid_params.append("{0}: value: {1} {2}".format(param_name, item, str(e)))
+            return item
+
+        min_value = param_spec.get("range_min", 1)
+        if param_spec.get("range_max") and not (min_value <= item <= param_spec["range_max"]):
+            invalid_params.append(
+                "{0}: {1} : The item exceeds the allowed range of min: {2} and max: {3}".format(
+                    param_name, item, param_spec.get("range_min"), param_spec.get("range_max"))
+            )
+
+        return item
+
+    def validate_bool(self,item, param_spec, param_name, invalid_params, module= None):
+        """
+        This function checks that the input `item` is a valid boolean value. If it does
+        not represent a valid boolean value, an error message is added to `invalid_params`.
+
+        Args:
+            item (bool): The input boolean value to be validated.
+            param_spec (dict): The parameter's specification, including validation constraints.
+            param_name (str): The name of the parameter being validated.
+            invalid_params (list): A list to collect validation error messages.
+
+        Returns:
+            bool: The validated boolean value.
+        """
+
+        return validation.check_type_bool(item)
+
+    def validate_list(self,item, param_spec, param_name, invalid_params, module= None):
+        """
+        This function checks if the input `item` is a valid list based on the specified `param_spec`.
+        It also verifies that the elements of the list match the expected data type specified in the
+        `param_spec`. If any validation errors occur, they are appended to the `invalid_params` list.
+
+        Args:
+            item (list): The input list to be validated.
+            param_spec (dict): The parameter's specification, including validation constraints.
+            param_name (str): The name of the parameter being validated.
+            invalid_params (list): A list to collect validation error messages.
+
+        Returns:
+            list: The validated list, potentially normalized based on the specification.
+        """
+
+        # import epdb;
+        # epdb.serve(port=9889)
+        try:
+            if param_spec.get("type") == type(item).__name__:
+                keys_list = []
+                for dict_key in param_spec:
+                    keys_list.append(dict_key)
+                if len(keys_list) == 1:
+                    return validation.check_type_list(item)
+                
+                temp_dict = {keys_list[1]: param_spec[keys_list[1]]}
+                try:
+                    if param_spec['elements']:
+                        if param_spec['elements']=='dict':
+                            common_defaults = {'type', 'elements', 'required', 'default', 'choices', 'no_log'}
+                            filtered_param_spec = {key: value for key, value in param_spec.items() if key not in common_defaults}
+                            if filtered_param_spec:
+                                item, list_invalid_params = self.validate_list_of_dicts(item, filtered_param_spec)
+                                invalid_params.extend(list_invalid_params)
+                        
+                        get_spec_type = param_spec['type']
+                        get_spec_element = param_spec['elements']
+                        if type(item).__name__ == get_spec_type:
+                            for element in item:
+                                if type(element).__name__ != get_spec_element:
+                                    invalid_params.append(
+                                        "{0} is not of the same datatype as expected which is {1}".format(element, get_spec_element)
+                                    )
+                        else:
+                            invalid_params.append(
+                                "{0} is not of the same datatype as expected which is {1}".format(item, get_spec_type)
+                            )
+                except Exception as e:
+                    item, list_invalid_params = self.validate_list_of_dicts(item, temp_dict)
+                    invalid_params.extend(list_invalid_params)
+            else:
+                invalid_params.append("{0} : is not a valid list".format(item))
+        except Exception as e:
+            invalid_params.append("{0} : comes into the exception".format(e))
+
+        return item
+
+    def validate_dict(self,item, param_spec, param_name, invalid_params, module=None):
+        """
+        This function checks if the input `item` is a valid dictionary based on the specified `param_spec`.
+        If the dictionary does not match the expected data type specified in the `param_spec`,
+        a validation error is appended to the `invalid_params` list.
+
+        Args:
+            item (dict): The input dictionary to be validated.
+            param_spec (dict): The parameter's specification, including validation constraints.
+            param_name (str): The name of the parameter being validated.
+            invalid_params (list): A list to collect validation error messages.
+
+        Returns:
+            dict: The validated dictionary.
+        """
+        # import epdb;
+        # epdb.serve(port=9889)
+        if param_spec.get("type") != type(item).__name__:
+            invalid_params.append("{0} : is not a valid dictionary".format(item))
+        
+        if param_spec.get("type") == 'dict':
+            common_defaults = {'type', 'elements', 'required', 'default', 'choices', 'no_log'}
+            filtered_param_spec = {key: value for key, value in param_spec.items() if key not in common_defaults} 
+
+            valid_params_dict = {}
+        
+            if filtered_param_spec: 
+                for param in filtered_param_spec:
+                    curr_item = item.get(param)
+                    if curr_item is None:
+                        if filtered_param_spec[param].get("required"):
+                            invalid_params.append(
+                                "{0} : Required parameter not found".format(param)
+                            )
+                        else:
+                            curr_item = filtered_param_spec[param].get("default")
+                            valid_params_dict[param] = curr_item
+                            continue
+                    data_type = filtered_param_spec[param].get("type")
+                    switch = {
+                        "str": self.validate_str,
+                        "int": self.validate_integer_within_range,
+                        "bool": self.validate_bool,
+                        "list": self.validate_list,
+                        "dict": self.validate_dict,
+                    }
+
+                    validator = switch.get(data_type)
+                    if validator:
+                        curr_item = validator(curr_item, filtered_param_spec[param], param, invalid_params, module)
+                    else:
+                        invalid_params.append(
+                            "{0}:{1} : Unsupported data type {2}.".format(param, curr_item, data_type)
+                        )
+
+                    choice = filtered_param_spec[param].get("choices")
+                    if choice:
+                        if curr_item not in choice:
+                            invalid_params.append(
+                                "{0} : Invalid choice provided".format(curr_item)
+                            )
+
+                    no_log = filtered_param_spec[param].get("no_log")
+                    if no_log:
+                        if module is not None:
+                            module.no_log_values.add(curr_item)
+                        else:
+                            msg = "\n\n'{0}' is a no_log parameter".format(param)
+                            msg += "\nAnsible module object must be passed to this "
+                            msg += "\nfunction to ensure it is not logged\n\n"
+                            raise Exception(msg)
+
+                    valid_params_dict[param] = curr_item
+                item = valid_params_dict    
+
+        return validation.check_type_dict(item)
+
+    def validate_list_of_dicts(self,param_list, spec, module=None):
+        """Validate/Normalize playbook params. Will raise when invalid parameters found.
+        param_list: a playbook parameter list of dicts
+        spec: an argument spec dict
+            e.g. spec = dict(ip=dict(required=True, type='bool'),
+                            foo=dict(type='str', default='bar'))
+        return: list of normalized input data
+        """
+
+        v = validation
+        normalized = []
+        invalid_params = []
+        # import epdb;
+        # epdb.serve(port=9889)
+        for list_entry in param_list:
+            valid_params_dict = {}
+            if not spec:
+                # Handle the case when spec becomes empty but param list is still there
+                invalid_params.append("No more spec to validate, but parameters remain")
+                break
+            for param in spec:
+                item = list_entry.get(param)
+                if item is None:
+                    if spec[param].get("required"):
+                        invalid_params.append(
+                            "{0} : Required parameter not found".format(param)
+                        )
+                    else:
+                        item = spec[param].get("default")
+                        valid_params_dict[param] = item
+                        continue
+                data_type = spec[param].get("type")
+                switch = {
+                    "str": self.validate_str,
+                    "int": self.validate_integer_within_range,
+                    "bool": self.validate_bool,
+                    "list": self.validate_list,
+                    "dict": self.validate_dict,
+                }
+
+                validator = switch.get(data_type)
+                if validator:
+                    item = validator(item, spec[param], param, invalid_params, module)
+                else:
+                    invalid_params.append(
+                        "{0}:{1} : Unsupported data type {2}.".format(param, item, data_type)
+                    )
+
+                choice = spec[param].get("choices")
+                if choice:
+                    if item not in choice:
+                        invalid_params.append(
+                            "{0} : Invalid choice provided".format(item)
+                        )
+
+                no_log = spec[param].get("no_log")
+                if no_log:
+                    if module is not None:
+                        module.no_log_values.add(item)
+                    else:
+                        msg = "\n\n'{0}' is a no_log parameter".format(param)
+                        msg += "\nAnsible module object must be passed to this "
+                        msg += "\nfunction to ensure it is not logged\n\n"
+                        raise Exception(msg)
+
+                valid_params_dict[param] = item
+            normalized.append(valid_params_dict)
+
+        return normalized, invalid_params
+
+    def validate_device_rules(self, config):
+        device_rules=config.get("tags").get("device_rules")
+
+        if not device_rules:
+            self.msg = (
+                "No Device Rule is provided"
+                )
+            self.log(self.msg, "INFO")
+            return device_rules
+        rule_descriptions = device_rules.get("rule_descriptions")
+        if not rule_descriptions:
+            self.msg = (
+                "Device Rules does not contain rule descriptions. Required parameter for defining dynamic rules."
+                )
+            self.log(self.msg, "INFO")
+            self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+        
+        validated_rule_descriptions=[]
+        
+        # Choices
+        rule_name_choices = ['device_name', 'device_family', 'device_series', 'ip_address', 'location', 'version']
+        search_pattern_choices = ['contains', 'equals', 'starts_with', 'ends_with']
+        operation_choices = ['ILIKE', 'LIKE']
+        
+        for device_rule in rule_descriptions:
+            valudated_device_rule={}
+            rule_name= device_rule.get("rule_name")
+            if not rule_name:
+                self.msg = (
+                "Rule Name not provided. Required parameter for defining dynamic rules."
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            rule_name = rule_name.lower()
+            if rule_name not in rule_name_choices:
+                self.msg = (
+                f"Rule Name provided: {rule_name} is Invalid. Rulename should be one of {rule_name_choices}"
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            
+            search_pattern= device_rule.get("search_pattern")
+            if not search_pattern:
+                self.msg = (
+                "Search Pattern not provided. Required parameter for defining dynamic rules."
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            search_pattern = search_pattern.lower()
+            if search_pattern not in search_pattern_choices:
+                self.msg = (
+                f"Search pattern provided: {search_pattern} is Invalid. Search Pattern should be one of {search_pattern_choices}"
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            
+            value = device_rule.get("value")
+            if not value:
+                self.msg = (
+                    "Value not provided. Required parameter for defining dynamic rules."
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            
+            operation= device_rule.get("operation")
+            if not operation:
+                operation= "ILIKE"
+                self.msg = (
+                    f"Operation not provided. Setting it to its default value of {operation}"
+                )
+                self.log(self.msg, "INFO")
+
+            operation = operation.upper()
+            if operation not in operation_choices:
+                self.msg = (
+                    f"Operation provided: {operation} is Invalid. Operation should be one of {operation_choices}"
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            
+            valudated_device_rule["rule_name"]= rule_name
+            valudated_device_rule["search_pattern"]= search_pattern
+            valudated_device_rule["value"]= value
+            valudated_device_rule["operation"]= operation
+
+            validated_rule_descriptions.append(valudated_device_rule)
+
+        validated_device_rules={
+            "rule_descriptions":validated_rule_descriptions
+        }
+
+        self.msg = (
+            f"Device Rules validation completed. Validated device rules: {validated_device_rules}"
+        )
+        self.log(self.msg, "DEBUG")
+                
+        return validated_device_rules
+
+    def validate_port_rules(self, config):
+        port_rules=config.get("tags").get("port_rules")
+
+        if not port_rules:
+            self.msg = (
+                "No Port Rules are provided"
+                )
+            self.log(self.msg, "INFO")
+            return port_rules
+        rule_descriptions = port_rules.get("rule_descriptions")
+        scope_description = port_rules.get("scope_description")
+        validated_port_rules={}
+
+        if not scope_description:
+            state = self.params.get("state")
+            if state is "merged":
+                self.msg = (
+                    "Port Rules Rules does not contain scope descrption. Required parameter for creating/updating dynamic rules."
+                    )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            else:
+                self.msg = (
+                        f"Port Rules Rules does not contain scope descrption. State: {state}"
+                )
+                self.log(self.msg, "INFO")
+        else:
+            grouping_category = scope_description.get("grouping_category")
+            grouping_category_choices=["TAG", "SITE"]
+            grouping_category = grouping_category.upper()
+            if grouping_category and grouping_category not in grouping_category_choices:
+                self.msg = (
+                    f"Grouping category provided: {grouping_category} is Invalid. Grouping category should be one of {grouping_category}"
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            inherit = scope_description.get("inherit")
+            group_members= scope_description.get("group_members")
+
+            if not group_members:
+                self.msg = (
+                    f"No Group members provided for grouping catagory: {grouping_category}"
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            
+            validated_scope_description={
+                "grouping_category": grouping_category,
+                "inherit": inherit,
+                "group_members": group_members
+            }
+            validated_port_rules["scope_description"]=validated_scope_description
+
+        if not rule_descriptions:
+            if state is "merged":
+                self.msg = (
+                    "Port Rules Rules does not contain rule descriptions. Required parameter for creating/updating dynamic rules."
+                    )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            else:
+                self.msg = (
+                        f"Port Rules Rules does not contain rule descriptions. State: {state}"
+                )
+                self.log(self.msg, "INFO")
+        else:
+            validated_rule_descriptions=[]
+            rule_name_choices = ['speed', 'admin_status', 'port_name', 'operational_status', 'description']
+            search_pattern_choices = ['contains', 'equals', 'starts_with', 'ends_with']
+            operation_choices = ['ILIKE', 'LIKE']
+            for port_rule in rule_descriptions:
+                rule_name= port_rule.get("rule_name")
+                if not rule_name:
+                    self.msg = (
+                        "Rule Name not provided. Required parameter for defining dynamic rules."
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                rule_name = rule_name.lower()
+                if rule_name not in rule_name_choices:
+                    self.msg = (
+                        f"Rule Name provided: {rule_name} is Invalid. Rule Name should be one of {rule_name_choices}"
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                
+                search_pattern= port_rule.get("search_pattern")
+                if not search_pattern:
+                    self.msg = (
+                    "Search Pattern not provided. Required parameter for defining dynamic rules."
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                search_pattern = search_pattern.lower()
+                if search_pattern not in search_pattern_choices:
+                    self.msg = (
+                    f"Search pattern provided: {search_pattern} is Invalid. Search Pattern should be one of {search_pattern_choices}"
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                
+                value = port_rule.get("value")
+                if not value:
+                    self.msg = (
+                        "Value not provided. Required parameter for defining dynamic rules."
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                
+                operation= port_rule.get("operation")
+                if not operation:
+                    operation= "ILIKE"
+                    self.msg = (
+                        f"Operation not provided. Setting it to its default value of {operation}"
+                    )
+                    self.log(self.msg, "INFO")
+
+                operation = operation.upper()
+                if operation not in operation_choices:
+                    self.msg = (
+                        f"Operation provided: {operation} is Invalid. Operation should be one of {operation_choices}"
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                
+                valudated_port_rule={
+                    "rule_name": rule_name,
+                    "search_pattern": search_pattern,
+                    "value": value,
+                    "operation": operation
+                }
+                validated_rule_descriptions.append(valudated_port_rule)
+
+            validated_port_rules["rule_descriptions"] = validated_rule_descriptions
+            
+
+        self.msg = (
+            f"Port Rules validation completed. Validated Port rules: {validated_port_rules}"
+        )
+        self.log(self.msg, "DEBUG")
+                
+        return validated_port_rules
+
+    def validate_assign_members(self, config):
+        assign_members = config.get("tags").get("assign_members")
+
+        if not assign_members:
+            self.msg = (
+                " Assign members details not provided" 
+                )
+            self.log(self.msg, "INFO")
+            return assign_members
+
+        device_details= assign_members.get("device_details")
+        site_details= assign_members.get("site_details")
+
+        if not device_details and not site_details:
+            self.msg = (
+                "None of device details or site details are provided. Atleast one is needed to assign members"
+            )
+            self.log(self.msg, "INFO")
+            self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+        
+        if not device_details:
+            self.msg = (
+                " Device details are not provided" 
+                )
+            self.log(self.msg, "INFO")
+        else:
+
+            for device_detail in device_details:    
+                ip = device_detail.get("ip")
+                hostname = device_detail.get("hostname")
+                mac_address = device_detail.get("mac_address")
+                serial_number = device_detail.get("serial_number")
+                
+                if not ip and not hostname and not mac_address and not serial_number:
+                    self.msg = (
+                        "None of ip, hostname, mac address or serial number are provided. Atleast one is needed to assign members"
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                    
+                port_names = device_detail.get("port_names")
+
+        if not site_details:
+            self.msg = (
+                " Site details are not provided" 
+                )
+            self.log(self.msg, "INFO")
+        else:
+
+            for site_detail in site_details:    
+                site_names = site_detail.get("site_names")
+                if not site_names:
+                    self.msg = (
+                        "Site Names not provided. Required to assign the tag to members"
+                    )
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                    
+                port_names = site_detail.get("port_names")
+
+        self.msg = (
+            f"Assign members validation completed. Validated Assign members: {assign_members}"
+        )
+        self.log(self.msg, "DEBUG")
+        
+        return assign_members    
+
+        
 
 
+
+
+            
     def get_want(self, config):
         """
         Collects and validates the desired state configuration for fabric sites and zones from the given playbook configuration.
@@ -370,56 +977,131 @@ class Tags(DnacBase):
             of the system. The function returns the instance for further processing or method chaining.
         """
 
-        self.validate_params(config)
+        self.log("Get Want function", "DEBUG")
 
+        want={}
+        
         tags = config.get("tags")
         tags_membership = config.get("tags_membership")
 
         if not tags and not tags_membership:
             self.msg = (
-                "No input provided in the playbook for tag operation "
-                "or updating tag memberships in Cisco Catalysyt Center."
+                "No input provided in the playbook for tag operation or updating tag memberships in Cisco Catalysyt Center."
             )
             self.set_operation_result(
                 "failed", False, self.msg, "ERROR").check_return_status()
 
-        if tags:
-            tags_info = []
+        if not tags:
+            self.msg = (
+                "Tags not provided."
+            )
+            self.log(self.msg, "INFO")
+        else:
+            tag_name = tags.get("name")
+            if not tag_name:
+                self.msg = (
+                "No Tag Name provided or Provided Tag Name is empty."
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result(
+                    "failed", False, self.msg, "ERROR").check_return_status()
+            
+            description= tags.get("description")
+            if not description:
+                self.msg= "No Description is provided"
+                self.log(self.msg, "INFO")
 
-            for tag in tags:
-                tag_name = tag.get("name")
-                description = tag.get("description")
+            system_tag= tags.get("system_tag")
+            if not system_tag:
+                system_tag= False
+                self.msg= f"system tag not provided, setting it to its default value: {system_tag}"
+                self.log(self.msg, "INFO")
 
-                if not tag_name:
-                    self.msg = (
-                        "Required parameter 'name' is missing. It must be provided in the playbook for tag"
-                        "operations in Cisco Catalyst Center."
+            force_delete = tags.get("force_delete")
+            if not force_delete:
+                force_delete= False
+                self.msg= f"force delete not provided, setting it to its default value: {force_delete}"
+                self.log(self.msg, "INFO")
+
+            device_rules = self.validate_device_rules(config)
+            port_rules = self.validate_port_rules(config)
+            assign_members = self.validate_assign_members(config)
+            validated_tags={
+                "name": tag_name,
+                "description": description,
+                "system_tag": system_tag,
+                "force_delete": force_delete,
+                "device_rules": device_rules,
+                "port_rules": port_rules,
+                "assign_members": assign_members
+            }
+            # Creating dictionary again as the dynamic rules might be modified for casing changes.
+
+            want['tags']= validated_tags
+            self.msg = (
+                f"Tags validation completed. Validated Tags: {validated_tags}"
+            )
+            self.log(self.msg, "DEBUG")
+                
+        if not tags_membership:
+            self.msg = (
+                "Tags membership not provided."
+            )
+            self.log(self.msg, "INFO")
+        else:
+            tags = tags_membership.get("tags")
+            device_details= tags_membership.get("device_details")
+            site_details= tags_membership.get("site_details")
+            if not tags:
+                self.msg = (
+                    "No tags provided in tags_membership. Required Parameter."
+                )
+                self.log(self.msg, "INFO")
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            
+            if not device_details:
+                self.msg = (
+                    " Device details are not provided" 
                     )
-                    self.set_operation_result(
-                        "failed", False, self.msg, "ERROR").check_return_status()
+                self.log(self.msg, "INFO")
+            else:
+                for device_detail in device_details:    
+                    ip = device_detail.get("ip")
+                    hostname = device_detail.get("hostname")
+                    mac_address = device_detail.get("mac_address")
+                    serial_number = device_detail.get("serial_number")
+                    if not ip and not hostname and not mac_address and not serial_number:
+                        self.msg = (
+                            "None of ip, hostname, mac address or serial number are provided. Atleast one is needed to assign members"
+                        )
+                        self.log(self.msg, "INFO")
+                        self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                    port_names = device_detail.get("port_names")
 
-                if site_name.title() == "Global":
-                    self.msg = (
-                        "Unable to create/update the given site 'Global' to {0} as it is not allowed operation "
-                        "in the Cisco Catalyst Center."
-                    ).format(fabric_type)
-                    self.set_operation_result(
-                        "failed", False, self.msg, "ERROR").check_return_status()
+            if not site_details:
+                self.msg = (
+                    " Site details are not provided" 
+                    )
+                self.log(self.msg, "INFO")
+            else:
+                for site_detail in site_details:    
+                    site_names = site_detail.get("site_names")
+                    if not site_names:
+                        self.msg = (
+                            "Site Names not provided. Required to assign the tag to members"
+                        )
+                        self.log(self.msg, "INFO")
+                        self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()    
+                    port_names = site_detail.get("port_names")
 
-                if fabric_type not in ["fabric_site", "fabric_zone"]:
-                    self.msg = (
-                        "Invalid fabric_type '{0}' provided. Please use 'fabric_site' or 'fabric_zone' for fabric site/zone operations"
-                        " in Cisco Catalyst Center."
-                    ).format(fabric_type)
-                    self.set_operation_result(
-                        "failed", False, self.msg, "ERROR").check_return_status()
-
-                fabric_site_info.append(site)
-
-            want["fabric_sites"] = fabric_site_info
+            want["tags_membership"]= tags_membership
+            self.msg = (
+                f"Tags membership validation completed. Validated Tags membership: {tags_membership}"
+            )
+            self.log(self.msg, "DEBUG")
 
         self.want = want
-        self.msg = "Successfully collected all parameters from the playbook for creating/updating the fabric sites/zones."
+        self.msg = "Successfully collected all parameters from the playbook for creating/updating tags and tags memberships"
         self.log("Desired State (want): {0}".format(str(self.want)), "INFO")
 
         return self
@@ -482,7 +1164,6 @@ def main():
     ccc_tags.validate_input().check_return_status()
     ccc_tags.debugg(f"Validated Config: {ccc_tags.validated_config}")
     config_verify = ccc_tags.params.get("config_verify")
-    ccc_tags.int_fail()
 
     for config in ccc_tags.validated_config:
         ccc_tags.reset_values()
@@ -493,6 +1174,7 @@ def main():
         # if config_verify:
         #     ccc_tags.verify_diff_state_apply[state](config).check_return_status()
 
+    ccc_tags.int_fail()
     # Invoke the API to check the status and log the output of each site/zone and authentication profile update on console.
     ccc_tags.update_site_zones_profile_messages().check_return_status()
 
