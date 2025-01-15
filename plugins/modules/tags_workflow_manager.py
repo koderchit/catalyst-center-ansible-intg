@@ -757,18 +757,10 @@ class Tags(DnacBase):
         validated_port_rules={}
 
         if not scope_description:
-            state = self.params.get("state")
-            if state is "merged":
-                self.msg = (
-                    "Port Rules Rules does not contain scope descrption. Required parameter for creating/updating dynamic rules."
-                    )
-                self.log(self.msg, "INFO")
-                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
-            else:
-                self.msg = (
-                        f"Port Rules Rules does not contain scope descrption. State: {state}"
-                )
-                self.log(self.msg, "INFO")
+            self.msg = (
+                f"Port Rules Rules does not contain scope descrption."
+            )
+            self.log(self.msg, "INFO")
         else:
             grouping_category = scope_description.get("grouping_category")
             grouping_category_choices=["TAG", "SITE"]
@@ -797,17 +789,10 @@ class Tags(DnacBase):
             validated_port_rules["scope_description"]=validated_scope_description
 
         if not rule_descriptions:
-            if state is "merged":
-                self.msg = (
-                    "Port Rules Rules does not contain rule descriptions. Required parameter for creating/updating dynamic rules."
-                    )
-                self.log(self.msg, "INFO")
-                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
-            else:
-                self.msg = (
-                        f"Port Rules Rules does not contain rule descriptions. State: {state}"
-                )
-                self.log(self.msg, "INFO")
+            self.msg = (
+                f"Port Rules Rules does not contain rule descriptions."
+            )
+            self.log(self.msg, "INFO")
         else:
             validated_rule_descriptions=[]
             rule_name_choices = ['speed', 'admin_status', 'port_name', 'operational_status', 'description']
