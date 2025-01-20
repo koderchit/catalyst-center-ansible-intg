@@ -12,6 +12,8 @@ from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common import validation
 
+from collections import defaultdict
+
 __metaclass__ = type
 __author__ = ("Archit Soni, Madhan Sankaranarayanan")
 
@@ -173,11 +175,6 @@ class Tags(DnacBase):
         # self.create_zone, self.update_zone, self.no_update_zone = [], [], []
         # self.update_auth_profile, self.no_update_profile = [], []
         # self.delete_site, self.delete_zone, self.absent_site, self.absent_zone = [], [], [], []
-
-
-
-
-
 
     def validate_input(self):
         """
@@ -1152,11 +1149,11 @@ class Tags(DnacBase):
                 self.log(self.msg, "INFO")
             else:
                 for device_detail in device_details:    
-                    ip = device_detail.get("ip")
-                    hostname = device_detail.get("hostname")
-                    mac_address = device_detail.get("mac_address")
-                    serial_number = device_detail.get("serial_number")
-                    if not ip and not hostname and not mac_address and not serial_number:
+                    ip_addresses = device_detail.get("ip_addresses")
+                    hostnames = device_detail.get("hostnames")
+                    mac_addresses = device_detail.get("mac_addresses")
+                    serial_numbers = device_detail.get("serial_numbers")
+                    if not ip_addresses and not hostnames and not mac_addresses and not serial_numbers:
                         self.msg = (
                             "None of ip, hostname, mac address or serial number are provided. Atleast one is needed to assign members"
                         )
@@ -1208,21 +1205,223 @@ class Tags(DnacBase):
         """
         have={}
         tags = config.get("tags")
-        tag_name= tags.get("name")
-        tag_id= self.get_tag_id(tag_name)
-        if not tag_id:
-            self.msg= "Tag ID for {0} not available in Cisco Catalyst Center".format(tag_name)
-            self.log(self.msg, "DEBUG")
-        else:
-            have["tag_id"]= tag_id
+        if tags:
+            tag_name= tags.get("name")
+            tag_id= self.get_tag_id(tag_name)
+            if not tag_id:
+                self.msg= "Tag ID for {0} not available in Cisco Catalyst Center".format(tag_name)
+                self.log(self.msg, "DEBUG")
+            else:
+                have["tag_id"]= tag_id
         self.have= have
 
         return self
 
-    def get_diff_merged(self):
-        pass
+
+    def formatting_rule_representation(self, rule):
+
+        search_pattern= rule.get("search_pattern")
+        operation= rule.get("operation")
+        value = rule.get("value")
+        name = rule.get("rule_name")
+
+        name_selector = {
+            # Device Rule_names
+            "device_name": "hostname",
+            "device_family": "family", 
+            "device_series": "series",
+            "ip_address": "managementIpAddress",
+            "location": "groupNameHierarchy", 
+            "version": "softwareVersion",
+
+            # Port rule_names
+            "speed": "speed",
+            "admin_status": "adminStatus", 
+            "port_name": "portName", 
+            "operational_status": "status", 
+            "description": "description"
+        }
+        name =  name_selector.get(name)
+        self.log(rule, "DEBUG")
+        if search_pattern== "equals":
+            pass  #No change in value is required
+        elif search_pattern== "contains":
+            value= "%"+value+"%"
+        elif search_pattern == "starts_with":
+            value= value + "%"
+        elif search_pattern =="ends_with":
+            value= "%" + value
+        
+        formatted_rule = {
+            "operation" : operation,
+            "name" : name,
+            "value" : value
+        }
+        return formatted_rule
+    
+    def sorting_rule_descriptions(self, rule_descriptions):
+        sort_order = {
+            "hostname": 0,
+            "family": 1,
+            "series": 2,
+            "managementIpAddress": 3,
+            "groupNameHierarchy": 4,
+            "softwareVersion": 5,
+            "speed": 6,
+            "adminStatus": 7,
+            "portName": 8,
+            "status": 9,
+            "description": 10
+        }
+        
+        # Sort based on the `name` order and then by `value` within the same `name`
+        sorted_rule_descriptions = sorted(
+            rule_descriptions,
+            key=lambda x: (sort_order.get(x['name'], float('inf')), x['value'])
+        )
+        return sorted_rule_descriptions
+
+    def group_rules(self, rule_descriptions):
+        """
+            Groups leaf nodes by 'name' and creates a hierarchical dictionary structure
+            according to the specified rules.
+
+            Args:
+                leaf_nodes (list): List of leaf nodes (base rules).
+
+            Returns:
+                dict: Hierarchical dictionary structure.
+        """
+
+        leaf_nodes = rule_descriptions
+        # Group leaf nodes by 'name'
+        grouped_nodes = defaultdict(list)
+        for node in leaf_nodes:
+            grouped_nodes[node['name']].append(node)
+        
+        # Helper function to limit items to two per group and branch
+        def branch_conditions(conditions, operation):
+            while len(conditions) > 2:
+                conditions = [{
+                    'operation': operation,
+                    'items': [conditions.pop(0), conditions.pop(0)]
+                }] + conditions
+            return conditions
+
+        # Build the hierarchical structure for grouped nodes
+        grouped_conditions = []
+        for name, nodes in grouped_nodes.items():
+            if len(nodes) > 1:
+                # Create an OR operation for nodes with the same name
+                or_group = {
+                    'operation': 'OR',
+                    'items': branch_conditions(nodes, 'OR')
+                }
+                grouped_conditions.append(or_group)
+            else:
+                # Single node remains as is
+                grouped_conditions.append(nodes[0])
+
+
+        # Combine all grouped conditions with AND
+        while len(grouped_conditions) > 2:
+            grouped_conditions = [{
+                'operation': 'AND',
+                'items': [grouped_conditions.pop(0), grouped_conditions.pop(0)]
+            }] + grouped_conditions
+
+        if len(grouped_conditions) > 1:
+            return {
+                'operation': 'AND',
+                'items': grouped_conditions
+            }
+        else:
+            return grouped_conditions[0]
+
+    def form_device_rules_tree(self, device_rules):
+
+        if device_rules is None:
+            return device_rules
+        
+        rule_descriptions= device_rules.get("rule_descriptions")
+        
+        formatted_rule_descriptions=[]
+        for device_rule in rule_descriptions:
+            formatted_rule_description= self.formatting_rule_representation(device_rule)
+            formatted_rule_descriptions.append(formatted_rule_description)
+
+        # Sorting it so that its easier to compare.
+        formatted_rule_descriptions= self.sorting_rule_descriptions(formatted_rule_descriptions)
+
+        grouped_device_rules= self.group_rules(formatted_rule_descriptions)
+        
+        self.log(formatted_rule_descriptions, "DEBUG")
+        self.log(grouped_device_rules, "DEBUG")
 
         
+        return grouped_device_rules
+
+        
+    def form_port_rules_tree(self, port_rules):
+        if port_rules is None:
+            return port_rules
+        
+        pass
+        
+
+        
+
+
+    def create_tag(self, tags):
+
+        tag_payload={}
+
+        name= tags.get("name")
+        description= tags.get("description")
+        device_rules = tags.get("device_rules")
+        port_rules = tags.get("port_rules")
+
+        formatted_device_rules = self.form_device_rules_tree(device_rules)
+
+        # formatted_port_rules = self.form_port_rules_tree(port_rules)
+        # dynamic_rules= self.combine_device_port_rules(formatted_device_rules, formatted_port_rules)
+        
+        # tag_payload["name"]= name
+        # if description:
+        #     tag_payload["description"]= description
+        
+        # if dynamic_rules:
+        #     tag_payload["dynamicRules"]= dynamic_rules
+
+
+
+
+        self.log("IM HEREEEEE", "DEBUG")
+
+
+
+        return self
+
+    def get_diff_merged(self, config):
+        tags = self.want.get("tags")
+        if tags:
+            self.log("Starting Tag Creation/Updation", "DEBUG")
+            tag_in_ccc= self.have.get("tags")
+            if not tag_in_ccc:
+                self.log("Creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
+                self.create_tag(tags).check_return_status()
+                # Code to create a new tag with the passed parameters.
+
+                assign_members = tags.get("assign_members")
+                if assign_members:
+                    pass
+                    # code to assign members to the tag. Make it reusable. 
+            else:
+                # Check if the tag in ccc and tag are same, if not, it needs an update, so call the respective apis
+                pass
+
+            pass
+        return self
         
 
     def int_fail(self, msg="Intentional Fail "):
@@ -1289,7 +1488,7 @@ def main():
         ccc_tags.get_want(config).check_return_status()
         ccc_tags.get_have(config).check_return_status()
 
-        # ccc_tags.get_diff_state_apply[state](config).check_return_status()
+        ccc_tags.get_diff_state_apply[state](config).check_return_status()
         # if config_verify:
         #     ccc_tags.verify_diff_state_apply[state](config).check_return_status()
 
