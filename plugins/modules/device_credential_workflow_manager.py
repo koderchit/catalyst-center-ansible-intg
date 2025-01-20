@@ -871,129 +871,129 @@ class DeviceCredential(DnacBase):
                 "type": 'dict',
                 "cli_credential": {
                     "type": 'list',
-                    "description": {"type": 'string'},
-                    "username": {"type": 'string'},
-                    "password": {"type": 'string'},
-                    "enable_password": {"type": 'string'},
-                    "old_description": {"type": 'string'},
-                    "old_username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type": 'str'},
+                    "username": {"type": 'str'},
+                    "password": {"type": 'str'},
+                    "enable_password": {"type": 'str'},
+                    "old_description": {"type": 'str'},
+                    "old_username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v2c_read": {
                     "type": 'list',
-                    "description": {"type": 'string'},
-                    "read_community": {"type": 'string'},
-                    "old_description": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type": 'str'},
+                    "read_community": {"type": 'str'},
+                    "old_description": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v2c_write": {
                     "type": 'list',
-                    "description": {"type": 'string'},
-                    "write_community": {"type": 'string'},
-                    "old_description": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type": 'str'},
+                    "write_community": {"type": 'str'},
+                    "old_description": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v3": {
                     "type": 'list',
-                    "description": {"type": 'string'},
-                    "username": {"type": 'string'},
-                    "snmp_mode": {"type": 'string'},
-                    "auth_type": {"type": 'string'},
-                    "auth_password": {"type": 'string'},
-                    "privacy_type": {"type": 'string'},
-                    "privacy_password": {"type": 'string'},
-                    "old_description": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type": 'str'},
+                    "username": {"type": 'str'},
+                    "snmp_mode": {"type": 'str'},
+                    "auth_type": {"type": 'str'},
+                    "auth_password": {"type": 'str'},
+                    "privacy_type": {"type": 'str'},
+                    "privacy_password": {"type": 'str'},
+                    "old_description": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "https_read": {
                     "type": 'list',
-                    "description": {"type": 'string'},
-                    "username": {"type": 'string'},
-                    "password": {"type": 'string'},
-                    "port": {"type": 'integer'},
-                    "old_description": {"type": 'string'},
-                    "old_username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type": 'str'},
+                    "username": {"type": 'str'},
+                    "password": {"type": 'str'},
+                    "port": {"type": 'int'},
+                    "old_description": {"type": 'str'},
+                    "old_username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "https_write": {
                     "type": 'list',
-                    "description": {"type": 'string'},
-                    "username": {"type": 'string'},
-                    "password": {"type": 'string'},
-                    "port": {"type": 'integer'},
-                    "old_description": {"type": 'string'},
-                    "old_username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type": 'str'},
+                    "username": {"type": 'str'},
+                    "password": {"type": 'str'},
+                    "port": {"type": 'int'},
+                    "old_description": {"type": 'str'},
+                    "old_username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 }
             },
             "assign_credentials_to_site": {
                 "type": 'dict',
                 "cli_credential": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v2c_read": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v2c_write": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v3": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "id": {"type": 'str'},
                 },
                 "https_read": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "https_write": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "site_name": {
                     "type": 'list',
-                    "elements": 'string'
+                    "elements": 'str'
                 }
             },
             "apply_credentials_to_site": {
                 "type": 'dict',
                 "cli_credential": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v2c_read": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "username": {"type": 'string'},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "username": {"type": 'str'},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v2c_write": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "id": {"type": 'str'},
                 },
                 "snmp_v3": {
                     "type": 'dict',
-                    "description": {"type: 'string'"},
-                    "id": {"type": 'string'},
+                    "description": {"type: 'str'"},
+                    "id": {"type": 'str'},
                 },
                 "site_name": {
                     "type": 'list',
-                    "elements": 'string'
+                    "elements": 'str'
                 }
             }
         }
@@ -2156,17 +2156,17 @@ class DeviceCredential(DnacBase):
                     for item in global_cli_details:
                         if item.get("description") == cli_description and \
                                 item.get("username") == cli_username:
-                            global_cli_details = item
-                    if not global_cli_details:
+                            cli_detail = item
+                    if not cli_detail:
                         self.msg = "The username and description of the CLI credential are invalid"
                         self.status = "failed"
                         return self
 
                 if current_ccc_version_as_int <= self.get_ccc_version_as_int_from_str("2.3.5.3"):
-                    want.get("assign_credentials").update({"cliId": global_cli_details.get("id")})
+                    want.get("assign_credentials").update({"cliId": cli_detail.get("id")})
                 else:
                     want.get("assign_credentials").update({
-                        "cliCredentialsId": {"credentialsId": global_cli_details.get("id")}
+                        "cliCredentialsId": {"credentialsId": cli_detail.get("id")}
                     })
 
         snmp_v2c_read = assign_credentials.get("snmp_v2c_read")
