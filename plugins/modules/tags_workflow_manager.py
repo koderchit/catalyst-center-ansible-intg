@@ -249,19 +249,19 @@ class Tags(DnacBase):
                     'device_details': {
                         'type': 'list',
                         'elements': 'dict',
-                        'ip': {
+                        'ip_addresses': {
                             'type': 'list',
                             'elements': 'str',
                         },
-                        'hostname': {
+                        'hostnames': {
                             'type': 'list',
                             'elements': 'str',
                         },
-                        'mac_address': {
+                        'mac_addresses': {
                             'type': 'list',
                             'elements': 'str',
                         },
-                        'serial_number': {
+                        'serial_numbers': {
                             'type': 'list',
                             'elements': 'str',
                         },
@@ -294,19 +294,19 @@ class Tags(DnacBase):
                 'device_details': {
                     'type': 'list',
                     'elements': 'dict',
-                    'ip': {
+                    'ip_addresses': {
                         'type': 'list',
                         'elements': 'str',
                     },
-                    'hostname': {
+                    'hostnames': {
                         'type': 'list',
                         'elements': 'str',
                     },
-                    'mac_address': {
+                    'mac_addresses': {
                         'type': 'list',
                         'elements': 'str',
                     },
-                    'serial_number': {
+                    'serial_numbers': {
                         'type': 'list',
                         'elements': 'str',
                     },
@@ -646,6 +646,26 @@ class Tags(DnacBase):
         return normalized, invalid_params
 
     def validate_device_rules(self, config):
+        """
+        Validates and processes device rules provided in the configuration dictionary.
+
+        Args:
+            config (dict): A configuration dictionary containing a "tags" key with 
+                        "device_rules" under it. Each device rule should include:
+                        - "rule_name" (str): Name of the device attribute to match.
+                        - "search_pattern" (str): Matching pattern type.
+                        - "value" (str): Value to match.
+                        - "operation" (str, optional): Matching operation (default is "ILIKE").
+
+        Returns:
+            dict: A dictionary containing the validated device rules.
+
+        Description:
+            The method ensures all provided device rules are valid, adhering to expected 
+            fields and constraints. Logs errors for missing or invalid parameters and sets 
+            default values where applicable. If validation fails at any step, it logs an 
+            error and stops execution.
+        """
         device_rules=config.get("tags").get("device_rules")
 
         if not device_rules:
@@ -744,6 +764,24 @@ class Tags(DnacBase):
         return validated_device_rules
 
     def validate_port_rules(self, config):
+        """
+        Validates and processes port rules provided in the configuration dictionary.
+
+        Args:
+            config (dict): A configuration dictionary containing a "tags" key with 
+                        "port_rules" under it. Port rules should include:
+                        - "rule_descriptions" (list): List of rule objects defining port attributes.
+                        - "scope_description" (dict, optional): Specifies grouping details for the port rules.
+
+        Returns:
+            dict: A dictionary containing the validated port rules.
+
+        Description:
+            This method ensures all provided port rules and scope descriptions are valid. 
+            It checks for missing or invalid fields and logs errors when necessary. Default 
+            values are assigned to optional fields if missing. The validation halts with an 
+            error if critical fields are invalid or missing.
+        """
         port_rules=config.get("tags").get("port_rules")
 
         if not port_rules:
@@ -755,6 +793,17 @@ class Tags(DnacBase):
         rule_descriptions = port_rules.get("rule_descriptions")
         scope_description = port_rules.get("scope_description")
         validated_port_rules={}
+
+
+
+        if not rule_descriptions and not scope_description:
+            self.msg = (
+                "Port Rules does not contain rule descriptions and scope description."
+                "Both are required for creation of dynamic rules and atleast one is required for updation or deletion."
+                )
+            self.log(self.msg, "INFO")
+            self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+    
 
         if not scope_description:
             self.msg = (
@@ -872,6 +921,20 @@ class Tags(DnacBase):
         return validated_port_rules
 
     def validate_assign_members(self, config):
+        """
+        Validates and processes the assign members details provided in the configuration dictionary.
+
+        Args:
+            config (dict): Configuration dictionary containing "assign_members" under the "tags" key.
+
+        Returns:
+            dict: A dictionary containing the validated assign members details.
+
+        Description:
+            Ensures the presence of "assign_members" with either "device_details" or "site_details". 
+            Validates required fields in each detail, logs errors for missing or invalid data, 
+            and halts execution for critical validation failures.
+        """
         assign_members = config.get("tags").get("assign_members")
 
         if not assign_members:
@@ -899,14 +962,14 @@ class Tags(DnacBase):
         else:
 
             for device_detail in device_details:    
-                ip = device_detail.get("ip")
-                hostname = device_detail.get("hostname")
-                mac_address = device_detail.get("mac_address")
-                serial_number = device_detail.get("serial_number")
+                ip_addresses = device_detail.get("ip_addresses")
+                hostnames = device_detail.get("hostnames")
+                mac_addresses = device_detail.get("mac_addresses")
+                serial_numbers = device_detail.get("serial_numbers")
                 
-                if not ip and not hostname and not mac_address and not serial_number:
+                if not ip_addresses and not hostnames and not mac_addresses and not serial_numbers:
                     self.msg = (
-                        "None of ip, hostname, mac address or serial number are provided. Atleast one is needed to assign members"
+                        "None of ip addresses, hostnames, mac addresses or serial numbers are provided. Atleast one is needed to assign members"
                     )
                     self.log(self.msg, "INFO")
                     self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
@@ -938,11 +1001,49 @@ class Tags(DnacBase):
         
         return assign_members    
 
-        
+    def get_tag_id(self, tag_name):
+        """
+        Retrieves the tag ID for a given tag name from the Cisco Catalyst Center.
 
+        Args:
+            tag_name (str): The name of the tag whose ID needs to be retrieved.
 
+        Returns:
+            str or None: The tag ID if found, otherwise None.
 
+        Description:
+            This method initiates an API call to retrieve tag details using the provided tag name. 
+            If the response is empty or an error occurs, it logs the issue and returns None.
+        """
 
+        self.log("Initiating retrieval of tag details for tag name: '{0}'.".format(tag_name), "DEBUG")
+
+        try:
+            response = self.dnac._exec(
+                family="tag",
+                function='get_tag',
+                op_modifies=True,
+                params={"name": tag_name},
+            )
+
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_tag' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No tag details retrieved for tag name: {0}, Response empty.".format(tag_name)
+                self.log(self.msg, "DEBUG")
+                return None
+            tag_id = response[0].get("id")
+            
+            return tag_id
+
+        except Exception as e:
+            self.msg = """Error while getting the details of Site with given name '{0}' present in
+            Cisco Catalyst Center: {1}""".format(tag_name, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
             
     def get_want(self, config):
         """
@@ -1091,6 +1192,39 @@ class Tags(DnacBase):
 
         return self
 
+    def get_have(self, config):
+        """
+            Retrieves the tag ID based on the provided config, and stores it in the 'have' dictionary.
+
+            Args:
+                config (dict): Configuration dictionary containing the 'tags' key with 'name' as a subkey.
+
+            Returns:
+                self: Returns the instance of the class for method chaining.
+
+            Description:
+                This method extracts the tag name from the config, retrieves the tag ID, 
+                and stores it in the 'have' dictionary. If the tag ID is not found, it logs an debug message.
+        """
+        have={}
+        tags = config.get("tags")
+        tag_name= tags.get("name")
+        tag_id= self.get_tag_id(tag_name)
+        if not tag_id:
+            self.msg= "Tag ID for {0} not available in Cisco Catalyst Center".format(tag_name)
+            self.log(self.msg, "DEBUG")
+        else:
+            have["tag_id"]= tag_id
+        self.have= have
+
+        return self
+
+    def get_diff_merged(self):
+        pass
+
+        
+        
+
     def int_fail(self, msg="Intentional Fail "):
         self.msg = msg
         self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -1101,6 +1235,7 @@ class Tags(DnacBase):
 
 
 def main():
+
     """ main entry point for module execution
     """
 
@@ -1127,8 +1262,7 @@ def main():
                            supports_check_mode=False)
 
     ccc_tags = Tags(module)
-# TODO: Change this to 2379
-    if ccc_tags.compare_dnac_versions(ccc_tags.get_ccc_version(), "2.3.7.6") < 0:
+    if ccc_tags.compare_dnac_versions(ccc_tags.get_ccc_version(), "2.3.7.9") < 0:
         ccc_tags.msg = (
             "The specified version '{0}' does not support the tagging feature. Supported versions start "
             "  from '2.3.7.9' onwards. Version '2.3.7.9' introduces APIs for creating, updating and deleting the "
@@ -1153,13 +1287,16 @@ def main():
     for config in ccc_tags.validated_config:
         ccc_tags.reset_values()
         ccc_tags.get_want(config).check_return_status()
+        ccc_tags.get_have(config).check_return_status()
 
-        # ccc_tags.get_have(config).check_return_status()
         # ccc_tags.get_diff_state_apply[state](config).check_return_status()
         # if config_verify:
         #     ccc_tags.verify_diff_state_apply[state](config).check_return_status()
 
     ccc_tags.int_fail()
+    # ccc_tags.get_tag_id("TEST101")
+    # ccc_tags.log(ccc_tags["have"].get("tag_id"))
+
     # Invoke the API to check the status and log the output of each site/zone and authentication profile update on console.
     ccc_tags.update_site_zones_profile_messages().check_return_status()
 
