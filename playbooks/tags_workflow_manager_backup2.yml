@@ -1,0 +1,486 @@
+# For creating a Tag
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Create a Tag.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: False
+        config:
+          - tags:  
+              name: ServersTag # String, Required
+              description: Tag for devices and interfaces connected to servers # String, Optional
+              system_tag: False  # Boolean, Optional, Default: False
+              
+
+
+
+# For creating a tag and assigning members at the time of creation.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Create a Tag and assign members.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: False
+        config:
+          - tags: 
+              name: ServersTag 
+              description: Tag for devices and interfaces connected to servers
+              system_tag: False  
+              assign_members: # Assigning the created tag to members (devices/ports).
+                device_details: 
+                  - ip_addresses: 
+                      - 10.197.156.97
+                      - 10.197.156.98
+                    hostnames: 
+                      - SJC_Border1 
+                      - NY_Border1
+                    mac_addresses: 
+                      - e4:38:7e:42:bc:00
+                      - 34:5d:a8:3b:d8:e0
+                    serial_numbers: 
+                      - SAD055006NE
+                      - SAD055108C2
+                    port_names: 
+                      - FortyGigabitEthernet1/1/1
+                      - FortyGigabitEthernet1/1/2  
+                site_details: 
+                  - site_names: 
+                      - Global/BLR
+                      - Global/HYD
+                    port_names: 
+                      - FortyGigabitEthernet1/1/1
+                      - FortyGigabitEthernet1/1/2
+
+# If port_names is provided, the tag will be assigned to the respective ports in the devices
+# Both device_details and site_details can be provided together. 
+
+
+
+
+
+
+# Creating tags with dynamic rules.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Create a Tag with dynamic rules .
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: False
+        config:
+          - tags: 
+              name: ServersTag 
+              description: Tag for devices and interfaces connected to servers 
+              system_tag: False 
+              device_rules:
+                rule_descriptions:
+                  - rule_name: device_name   # String, Choices : {device_name, device_family, device_series, ip_address, location, version}
+                    search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
+                    value: Border          # String
+                    operation: ILIKE       # String, Default: ILIKE, Optional, Choices : {ILIKE, LIKE} (LIKE is case sensitive search)       
+                  - rule_name: device_family  
+                    search_pattern: contains 
+                    value: "9300" 
+                    operation: ILIKE
+
+              # Both port rules and devices rules can be given together.
+              port_rules:
+                scope_description: # Required while creating the rules. For updating, scope_description is not required unless a change has to be made.
+                  grouping_category: TAG # String, Choices: {TAG, SITE} 
+                  group_members: # Tag names for grouping_category: TAG and site name hierarchies for grouping_category: SITE
+                    - NYC_Servers_Tag
+                    - SJC_Servers_Tag
+                rule_descriptions:
+                  - rule_name: speed         # String, Choices : {speed, admin_status, port_name, operational_status, description}
+                    search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
+                    value: "100000"          # String
+                    operation: ILIKE         # String, Default: ILIKE, Optional, Choices : {ILIKE, LIKE} (LIKE is case sensitive search)  
+                  - rule_name: port_name  
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE 
+                  - rule_name: admin_status 
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE  
+
+# Note on combining multiple rules:
+# - If the same rule_name is provided multiple times, the rules are combined using OR.
+# - If different rule_name values are provided, the rules are combined using AND.
+
+# For example, given the following 4 rules:
+# device_name_rule1, device_name_rule2, device_family_rule1, device_family_rule2
+
+# The resulting structure would be:
+# (device_name_rule1 OR device_name_rule2) AND (device_family_rule1 OR device_family_rule2)
+                
+
+                
+
+
+
+
+#  To add/update device/port tag membership
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Adding/Updating Members to Tags.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: False
+        config:
+          - tags_membership:
+              tags:  
+                - ServerTag1 
+                - ServerTag2
+              device_details: 
+                - ip_addresses: 
+                    - 10.197.156.97
+                    - 10.197.156.98
+                    - 10.197.156.99
+                  hostnames: 
+                    - SJC_Border1 
+                    - SJC_Border2
+                    - NY_Border1
+                  mac_addresses: 
+                    - e4:38:7e:42:bc:00
+                    - 6c:d6:e3:75:5a:e0
+                    - 34:5d:a8:3b:d8:e0
+                  serial_numbers: 
+                    - SAD055006NE
+                    - SAD04350EEU
+                    - SAD055108C2
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2  
+              site_details: 
+                - site_names: 
+                    - Global/BLR
+                    - Global/HYD
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2
+
+# If port_names is provided, the tag will be assigned to the respective ports and not to the devices
+# Both device_details, site_details can be provided. 
+
+
+
+
+# Deleting a tag.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Delete a Tag.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: False
+        config:
+          - tags: 
+              name: ServersTag # String, Required 
+              force_delete: False # Optional, If not provided, and if the device has any dynamic/static members, It'll fail the execution.
+
+
+# Deleting a Dynamic rule.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Delete a Dynamic Rule.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: False
+        config:
+          - tags: 
+              name: ServersTag 
+              device_rules:
+                rule_descriptions:
+                  - rule_name: device_name   # String, Choices : {device_name, device_family, device_series, ip_address, location, version}
+                    search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
+                    value: Border          # String
+                    operation: ILIKE       # String, Default: ILIKE, Optional, Choices : {ILIKE, LIKE} (LIKE is case sensitive search)       
+                  - rule_name: device_family  
+                    search_pattern: contains 
+                    value: "9300" 
+                    operation: ILIKE 
+              port_rules:  
+                scope_description:           # While deleting, scope_description is not required unless a change has to be made in the scope. If it is provided, the respective scope will be removed
+                  grouping_category: SITE    # String, Choices: {TAG, SITE}
+                  inherit: True              # Optional, Relevant only in case of site, Default: True
+                  group_members:             # Tag names for grouping_category: TAG and site name hierarchies for grouping_category: SITE
+                    - Global/BLR
+                    - Global/HYD
+                rule_descriptions:           # While deleting, rule_descriptions is not required unless a change has to be made in the rules. If it is provided, the respective rules will be removed
+                  - rule_name: speed         # String, Choices : {speed, admin_status, port_name, operational_status, description}
+                    search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
+                    value: "100000"          # String
+                    operation: ILIKE       # String, Default: ILIKE, Optional, Choices : {ILIKE, LIKE} (LIKE is case sensitive search)  
+                  - rule_name: port_name  
+                    search_pattern: contains 
+                    value: tengig/1/0/1   
+                    operation: ILIKE 
+                  - rule_name: admin_status 
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE  
+
+
+# Delete members from tags.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Delete members from tags.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: True/False
+        config:
+          - tags_membership: 
+              tags:  
+                - ServersTag1 
+                - ServersTag2
+              device_details: 
+                - ip_addresses: 
+                    - 10.197.156.97
+                    - 10.197.156.98
+                  hostnames: 
+                    - SJC_Border1 
+                    - NY_Border1
+                  mac_addresses: 
+                    - e4:38:7e:42:bc:00
+                    - 6c:d6:e3:75:5a:e0
+                  serial_numbers: 
+                    - SAD055006NE
+                    - SAD04350EEU
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2  
+              site_details: 
+                - site_names: 
+                    - Global/BLR
+                    - Global/HYD
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2
+
+# if port_names are given, then the tags will be removed to those ports in the devices.
+
+
+
+
+
+
+
+
+# Everything at Once
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: False
+  connection: local
+  tasks:
+    - name: Create a Tag.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: True
+        dnac_log_level: DEBUG
+        dnac_log_append: True
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: False
+        config:
+          - tags:  
+              name: ServersTag # String, Required
+              description: Tag for devices and interfaces connected to servers # String, Optional
+              system_tag: False  # Boolean, Optional, Default: False
+              device_rules:
+                rule_descriptions:
+                  - rule_name: device_name   # String, Choices : {device_name, device_family, device_series, ip_address, location, version}
+                    search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
+                    value: Border          # String
+                    operation: ILIKE       # String, Default: ILIKE, Optional, Choices : {ILIKE, LIKE} (LIKE is case sensitive search)       
+                  - rule_name: device_family  
+                    search_pattern: contains 
+                    value: "9300" 
+                    operation: ILIKE
+
+              # Both port rules and devices rules can be given together.
+              port_rules:
+                scope_description: # Required while creating the rules. For updating, scope_description is not required unless a change has to be made.
+                  grouping_category: TAG # String, Choices: {TAG, SITE} 
+                  group_members: # Tag names for grouping_category: TAG and site name hierarchies for grouping_category: SITE
+                    - NYC_Servers_Tag
+                    - SJC_Servers_Tag
+                rule_descriptions:
+                  - rule_name: speed         # String, Choices : {speed, admin_status, port_name, operational_status, description}
+                    search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
+                    value: "100000"          # String
+                    operation: ILIKE         # String, Default: ILIKE, Optional, Choices : {ILIKE, LIKE} (LIKE is case sensitive search)  
+                  - rule_name: port_name  
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE 
+                  - rule_name: admin_status 
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE  
+
+              assign_members: # Assigning the created tag to members (devices/ports).
+                device_details: 
+                  - ip_addresses: 
+                      - 10.197.156.97
+                      - 10.197.156.98
+                    hostnames: 
+                      - SJC_Border1 
+                      - NY_Border1
+                    mac_addresses: 
+                      - e4:38:7e:42:bc:00
+                      - 34:5d:a8:3b:d8:e0
+                    serial_numbers: 
+                      - SAD055006NE
+                      - SAD055108C2
+                    port_names: 
+                      - FortyGigabitEthernet1/1/1
+                      - FortyGigabitEthernet1/1/2  
+                site_details: 
+                  - site_names: 
+                      - Global/BLR
+                      - Global/HYD
+                    port_names: 
+                      - FortyGigabitEthernet1/1/1
+                      - FortyGigabitEthernet1/1/2
+            tags_membership:
+              tags:  
+                - ServerTag1 
+                - ServerTag2
+              device_details: 
+                - ip_addresses: 
+                    - 10.197.156.97
+                    - 10.197.156.98
+                    - 10.197.156.99
+                  hostnames: 
+                    - SJC_Border1 
+                    - SJC_Border2
+                    - NY_Border1
+                  mac_addresses: 
+                    - e4:38:7e:42:bc:00
+                    - 6c:d6:e3:75:5a:e0
+                    - 34:5d:a8:3b:d8:e0
+                  serial_numbers: 
+                    - SAD055006NE
+                    - SAD04350EEU
+                    - SAD055108C2
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2  
+              site_details: 
+                - site_names: 
+                    - Global/BLR
+                    - Global/HYD
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2
