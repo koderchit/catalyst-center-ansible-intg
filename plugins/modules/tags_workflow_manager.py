@@ -171,10 +171,8 @@ class Tags(DnacBase):
     def __init__(self, module):
         super().__init__(module)
         self.supported_states = ["merged", "deleted"]
-        # self.create_site, self.update_site, self.no_update_site = [], [], []
-        # self.create_zone, self.update_zone, self.no_update_zone = [], [], []
-        # self.update_auth_profile, self.no_update_profile = [], []
-        # self.delete_site, self.delete_zone, self.absent_site, self.absent_zone = [], [], [], []
+        self.create_tag, self.update_tag, self.no_update_tag = [], [], []
+        self.delete_tag, self.absent_tag= [], []
 
     def validate_input(self):
         """
@@ -1036,12 +1034,42 @@ class Tags(DnacBase):
             return tag_id
 
         except Exception as e:
-            self.msg = """Error while getting the details of Site with given name '{0}' present in
+            self.msg = """Error while getting the details of Tag with given name '{0}' present in
             Cisco Catalyst Center: {1}""".format(tag_name, str(e))
             self.fail_and_exit(self.msg)
 
         return None
             
+    def get_site_id(self, site_name):
+        self.log("Initiating retrieval of site details for site name: '{0}'.".format(site_name), "DEBUG")
+
+        try:
+            response = self.dnac._exec(
+                family="sites",
+                function='get_site',
+                op_modifies=True,
+                params={"name": site_name},
+            )
+
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_site' for the site '{0}': {1}".format(site_name, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No Site details retrieved for Site name: {0}, Response empty.".format(site_name)
+                self.log(self.msg, "DEBUG")
+                return None
+            site_id = response[0].get("id")
+
+            return site_id
+
+        except Exception as e:
+            self.msg = """Error while getting the details of Site with given name '{0}' present in
+            Cisco Catalyst Center: {1}""".format(site_name, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
+
     def get_want(self, config):
         """
         Collects and validates the desired state configuration for fabric sites and zones from the given playbook configuration.
@@ -1217,8 +1245,7 @@ class Tags(DnacBase):
 
         return self
 
-
-    def formatting_rule_representation(self, rule):
+    def format_rule_representation(self, rule):
 
         search_pattern= rule.get("search_pattern")
         operation= rule.get("operation")
@@ -1281,7 +1308,7 @@ class Tags(DnacBase):
         )
         return sorted_rule_descriptions
 
-    def group_rules(self, rule_descriptions):
+    def group_rules_into_tree(self, rule_descriptions):
         """
             Groups leaf nodes by 'name' and creates a hierarchical dictionary structure
             according to the specified rules.
@@ -1338,7 +1365,7 @@ class Tags(DnacBase):
         else:
             return grouped_conditions[0]
 
-    def form_device_rules_tree(self, device_rules):
+    def format_device_rules(self, device_rules):
 
         if device_rules is None:
             return device_rules
@@ -1347,60 +1374,150 @@ class Tags(DnacBase):
         
         formatted_rule_descriptions=[]
         for device_rule in rule_descriptions:
-            formatted_rule_description= self.formatting_rule_representation(device_rule)
+            formatted_rule_description= self.format_rule_representation(device_rule)
             formatted_rule_descriptions.append(formatted_rule_description)
 
         # Sorting it so that its easier to compare.
         formatted_rule_descriptions= self.sorting_rule_descriptions(formatted_rule_descriptions)
 
-        grouped_device_rules= self.group_rules(formatted_rule_descriptions)
+        grouped_device_rules= self.group_rules_into_tree(formatted_rule_descriptions)
         
         self.log(formatted_rule_descriptions, "DEBUG")
         self.log(grouped_device_rules, "DEBUG")
-
         
-        return grouped_device_rules
+        formatted_device_rules = {
+            "memberType" : "networkdevice",
+            "rules": grouped_device_rules
+        }
 
+        return formatted_device_rules
+
+    def format_scope_description(self, scope_description):
         
-    def form_port_rules_tree(self, port_rules):
+        grouping_category= scope_description.get("grouping_category")
+        group_members= scope_description.get("group_members")
+        group_members_ids=[]
+        if grouping_category == "TAG":
+            for tag in group_members:
+                tag_id= self.get_tag_id(tag)
+                if tag_id is None:
+                    self.msg= (
+                        "Grouping Member provided: {0} is Not present in Cisco Catalyst Center."
+                        "Please ensure that the group_members and grouping category provided are valid"
+                    ).format(tag)
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                group_members_ids.append(tag_id)
+        elif grouping_category == "SITE":
+            for site in group_members:
+                site_id= self.get_site_id(site)
+                self.log(site_id, "DEBUG")
+                if site_id is None:
+                    self.msg= (
+                        "Grouping Member provided: {0} is Not present in Cisco Catalyst Center."
+                        "Please ensure that the group_members and grouping category provided are valid"
+                    ).format(tag)
+                    self.log(self.msg, "INFO")
+                    self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+                group_members_ids.append(site_id)
+
+        formatted_scope_description={
+            "memberType": "networkdevice",
+            "inherit": scope_description.get("inherit"),
+            "groupType": grouping_category,
+            "scopeObjectIds": group_members_ids
+        }
+
+        return formatted_scope_description
+        
+    def format_port_rules(self, port_rules):
+        
         if port_rules is None:
             return port_rules
         
-        pass
-        
+        rule_descriptions= port_rules.get("rule_descriptions")
+        scope_description= port_rules.get("scope_description")
 
+        self.log(port_rules, "DEBUG")
         
+        formatted_rule_descriptions=[]
+        for port_rule in rule_descriptions:
+            formatted_rule_description= self.format_rule_representation(port_rule)
+            formatted_rule_descriptions.append(formatted_rule_description)
 
+        # Sorting it so that its easier to compare.
+        formatted_rule_descriptions_list= self.sorting_rule_descriptions(formatted_rule_descriptions)
+        
+        # Converting the sorted list to tree structure.
+        formatted_rule_descriptions= self.group_rules_into_tree(formatted_rule_descriptions_list)
+        
+        formatted_scope_description= self.format_scope_description(scope_description)
+
+        self.log(formatted_rule_descriptions_list, "DEBUG")
+        self.log(formatted_rule_descriptions, "DEBUG")
+        
+        formatted_port_rules = {
+            "memberType" : "interface",
+            "rules": formatted_rule_descriptions,
+            "scopeRule" : formatted_scope_description
+        }
+
+        return formatted_port_rules
+        
+    def combine_device_port_rules(self, device_rules, port_rules):
+        
+        dynamic_rules=[]
+        if device_rules:
+            dynamic_rules.append(device_rules)
+        if port_rules:
+            dynamic_rules.append(port_rules)
+
+        return dynamic_rules
 
     def create_tag(self, tags):
 
-        tag_payload={}
-
-        name= tags.get("name")
+        tag_name= tags.get("name")
         description= tags.get("description")
         device_rules = tags.get("device_rules")
         port_rules = tags.get("port_rules")
 
-        formatted_device_rules = self.form_device_rules_tree(device_rules)
+        formatted_device_rules = self.format_device_rules(device_rules)
 
-        # formatted_port_rules = self.form_port_rules_tree(port_rules)
-        # dynamic_rules= self.combine_device_port_rules(formatted_device_rules, formatted_port_rules)
+        formatted_port_rules = self.format_port_rules(port_rules)
+
+        dynamic_rules= self.combine_device_port_rules(formatted_device_rules, formatted_port_rules)
         
-        # tag_payload["name"]= name
-        # if description:
-        #     tag_payload["description"]= description
-        
-        # if dynamic_rules:
-        #     tag_payload["dynamicRules"]= dynamic_rules
+        tag_payload={
+            "name": tag_name,
+            "description": description,
+            "dynamicRules": dynamic_rules,
+        }
 
+        task_name = "create_tag"
+        payload = {"payload": tag_payload}
+        task_id = self.get_taskid_post_api_call("tag", task_name, payload)
 
+        if not task_id:
+            self.msg = "Unable to retrieve the task_id for the task '{0} for the tag {1}'.".format(task_name, tag_name)
+            self.set_operation_result("failed", False, self.msg, "ERROR")
+            return self
 
-
-        self.log("IM HEREEEEE", "DEBUG")
-
-
+        success_msg = "Tag: '{0}' created successfully in the Cisco Catalyst Center".format(tag_name)
+        self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
+        self.create_tag.append(tag_name)
 
         return self
+
+    def format_device_details(self):
+        pass
+
+    def assign_members_on_tag_creation(self, tags):
+        assign_members = tags.get("assign_members")
+
+        
+
+
+
 
     def get_diff_merged(self, config):
         tags = self.want.get("tags")
@@ -1408,9 +1525,8 @@ class Tags(DnacBase):
             self.log("Starting Tag Creation/Updation", "DEBUG")
             tag_in_ccc= self.have.get("tags")
             if not tag_in_ccc:
-                self.log("Creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
+                self.log("Starting thr prpcess of creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
                 self.create_tag(tags).check_return_status()
-                # Code to create a new tag with the passed parameters.
 
                 assign_members = tags.get("assign_members")
                 if assign_members:
@@ -1423,7 +1539,6 @@ class Tags(DnacBase):
             pass
         return self
         
-
     def int_fail(self, msg="Intentional Fail "):
         self.msg = msg
         self.set_operation_result("failed", False, self.msg, "ERROR")
