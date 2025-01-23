@@ -24,7 +24,6 @@
           - tags:  
               name: ServersTag # String, Required
               description: Tag for devices and interfaces connected to servers # String, Optional
-              system_tag: False  # Boolean, Optional, Default: False
               device_rules:
                 rule_descriptions:
                   - rule_name: device_name   # String, Choices : {device_name, device_family, device_series, ip_address, location, version}
@@ -57,8 +56,8 @@
                 scope_description: # Required while creating the rules. For updating, scope_description is not required unless a change has to be made.
                   grouping_category: TAG # String, Choices: {TAG, SITE} 
                   group_members: # Tag names for grouping_category: TAG and site name hierarchies for grouping_category: SITE
-                    - NYC_Servers_Tag
-                    - SJC_Servers_Tag
+                    - TEST101
+                    - TEST102
                 rule_descriptions:
                   - rule_name: speed         # String, Choices : {speed, admin_status, port_name, operational_status, description}
                     search_pattern: contains # String, Choices : {contains, equals, starts_with, ends_with}
@@ -78,6 +77,7 @@
                   - ip_addresses: 
                       - 10.197.156.97
                       - 10.197.156.98
+                      - 204.1.216.5
                     hostnames: 
                       - SJC_Border1 
                       - NY_Border1
@@ -128,3 +128,46 @@
                   port_names: 
                     - FortyGigabitEthernet1/1/1
                     - FortyGigabitEthernet1/1/2
+
+
+
+
+# # Merged
+# Lets say the ServerTag1 already has .97 IP, and I am giving the following playbook, 
+# What it should do:
+
+#             tags_membership:
+#               tags:  
+#                 - ServerTag1 
+#               device_details: 
+#                 - ip_addresses: 
+#                     # - 10.197.156.97
+#                     - 10.197.156.98
+#                     - 10.197.156.99
+
+# 1) Add the .98 and .99 IP as its members and NOT remove the already existing members (that's .97)
+# So the current members will be .97,.98,.99
+
+# 2) Replace the existing members (clean the member list)
+# and then assign .98 and .99 to the members
+# SO the current members will be .98, .99
+
+# # Deleted
+# Lets say the ServerTag1 has all three, .97, .98, .99
+# and the following playbook is given, 
+
+#             tags_membership:
+#               tags:  
+#                 - ServerTag1 
+#               device_details: 
+#                 - ip_addresses: 
+#                     # - 10.197.156.97
+#                     - 10.197.156.98
+#                     - 10.197.156.99
+
+# 1) It is expected to remove just .98 and .99
+# and it'll not delete the ServerTag1 and it still keeps the .97 member
+# So current members are .97
+
+# 2) Remove the Tag entirely, Remove all the members and remove the tag then?
+
