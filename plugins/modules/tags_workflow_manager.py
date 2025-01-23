@@ -1508,15 +1508,79 @@ class Tags(DnacBase):
 
         return self
 
-    def format_device_details(self):
+    def get_device_id_by_param(self, param, param_value):
+        self.log("Initiating retrieval of device id details for site with {0}: '{1}' ".format(param, param_value), "DEBUG")
+
+        try:
+            param_api_name={
+                "ip_address":"managementIpAddress",
+                "hostname":"hostname",
+                "mac_address":"macAddress",
+                "serial_number":"serialNumber",
+            }
+            
+            payload={
+                "{0}".format(param_api_name.get(param)): param_value
+            }
+            response = self.dnac._exec(
+                family="devices",
+                function='get_device_list',
+                op_modifies=True,
+                params=payload,
+            )
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_device_list' for the Device with {0} '{1}' : {2}".format(param, param_value, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No Device details retrieved for Device with {0}:{1}, Response empty.".format(param, param_value)
+                self.log(self.msg, "DEBUG")
+                return None
+            site_id = response[0].get("id")
+
+            return site_id
+
+        except Exception as e:
+            self.msg = """Error while getting the details of Device details with {0}:'{0}' present in
+            Cisco Catalyst Center: {1}""".format(param, param_value, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
+
+    def format_device_details(self, device_details):
+        device_ids=[]
+        for device_detail in device_details:
+            available_params=["ip_addresses", "hostnames", "mac_addresses", "serial_numbers"]
+            available_param= ["ip_address", "hostname", "mac_address", "serial_number"]
+            self.log(f"{device_detail}","DEBUG")
+            for params_name, param_name in zip(available_params,available_param):
+                param_list = device_detail.get(params_name)
+                if param_list:
+                    for param in param_list:
+                        device_id = self.get_device_id_by_param(param_name, param)
+                        if device_id is not None:
+                            device_ids.append(device_id)
+                        else:
+                            self.log("No device found in Cisco Catalyst Center with {0}: {1}".format(param_name, param), "INFO")
+
+        self.log(f"{device_ids}", "DEBUG")
+        # forma a set of device IDs 
+        #  Warns if no valid Id are found, and do not create anything
+        pass
+
+    def get_device_id_list_by_site_name(self, site_name):
+
+        pass
+
+    def format_site_details(self):
+        pass
+
+    def get_port_id_by_device_id(self):
+        # self explainatory
         pass
 
     def assign_members_on_tag_creation(self, tags):
         assign_members = tags.get("assign_members")
-
-        
-
-
 
 
     def get_diff_merged(self, config):
@@ -1525,11 +1589,13 @@ class Tags(DnacBase):
             self.log("Starting Tag Creation/Updation", "DEBUG")
             tag_in_ccc= self.have.get("tags")
             if not tag_in_ccc:
-                self.log("Starting thr prpcess of creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
-                self.create_tag(tags).check_return_status()
+                self.log("Starting the process of creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
+                # self.create_tag(tags).check_return_status()
 
                 assign_members = tags.get("assign_members")
                 if assign_members:
+                    device_details= assign_members.get("device_details")
+                    formatted_device_details = self.format_device_details(device_details)
                     pass
                     # code to assign members to the tag. Make it reusable. 
             else:
