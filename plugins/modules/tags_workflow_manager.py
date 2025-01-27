@@ -1045,10 +1045,10 @@ class Tags(DnacBase):
 
         try:
             response = self.dnac._exec(
-                family="sites",
-                function='get_site',
+                family="site_design",
+                function='get_sites',
                 op_modifies=True,
-                params={"name": site_name},
+                params={"name_hierarchy": site_name},
             )
 
             # Check if the response is empty
@@ -1509,7 +1509,7 @@ class Tags(DnacBase):
         return self
 
     def get_device_id_by_param(self, param, param_value):
-        self.log("Initiating retrieval of device id details for site with {0}: '{1}' ".format(param, param_value), "DEBUG")
+        self.log("Initiating retrieval of device id details for device with {0}: '{1}' ".format(param, param_value), "DEBUG")
 
         try:
             param_api_name={
@@ -1533,16 +1533,47 @@ class Tags(DnacBase):
             self.log("Received API response from 'get_device_list' for the Device with {0} '{1}' : {2}".format(param, param_value, str(response)), "DEBUG")
 
             if not response:
-                self.msg = "No Device details retrieved for Device with {0}:{1}, Response empty.".format(param, param_value)
+                self.msg = "No Device details retrieved for Device with {0}: {1}, Response empty.".format(param, param_value)
                 self.log(self.msg, "DEBUG")
                 return None
-            site_id = response[0].get("id")
+            device_id = response[0].get("id")
 
-            return site_id
+            return device_id
 
         except Exception as e:
-            self.msg = """Error while getting the details of Device details with {0}:'{0}' present in
-            Cisco Catalyst Center: {1}""".format(param, param_value, str(e))
+            self.msg = """Error while getting the details of Device with {0}:'{1}' present in
+            Cisco Catalyst Center: {2}""".format(param, param_value, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
+
+    def get_port_id_by_device_id(self, device_id, port_name, device_identifier, device_identifier_value):
+
+        self.log("Initiating retrieval of interface details for the interface name: '{0}' of device with {1}: '{2}'".format(port_name, device_identifier, device_identifier_value), "DEBUG")
+        try:
+            response = self.dnac._exec(
+                family="devices",
+                function="get_interface_details",
+                op_modifies=True,
+                params={"device_id": device_id, "name": port_name}
+            )
+
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_interface_details' for the interface name: '{0}' of device with {1}: '{2}' is : {3}".format(port_name, device_identifier, device_identifier_value, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No interface details for interface name: '{0}' of device with {1}: '{2}', Response empty.".format(port_name, device_identifier, device_identifier_value)
+                self.log(self.msg, "DEBUG")
+                return None
+            
+            port_id = response.get("id")
+            
+            return port_id
+
+        except Exception as e:
+            self.msg = """Error while getting the details for the interface name: '{0}' of device with {1}: '{2}' 
+                present in Cisco Catalyst Center: {3}""".format(port_name, device_identifier, device_identifier_value, str(e))
             self.fail_and_exit(self.msg)
 
         return None
@@ -1550,44 +1581,160 @@ class Tags(DnacBase):
     def format_device_details(self, device_details):
         device_ids=[]
         for device_detail in device_details:
+            current_device_ids = []
+            port_names = device_detail.get("port_names")
+            if port_names:
+                self.log("Deduplicating the port_names list for duplicate port names", "DEBUG")
+                port_names =  list(set(port_names))
+
             available_params=["ip_addresses", "hostnames", "mac_addresses", "serial_numbers"]
             available_param= ["ip_address", "hostname", "mac_address", "serial_number"]
-            self.log(f"{device_detail}","DEBUG")
+
             for params_name, param_name in zip(available_params,available_param):
                 param_list = device_detail.get(params_name)
                 if param_list:
                     for param in param_list:
                         device_id = self.get_device_id_by_param(param_name, param)
-                        if device_id is not None:
-                            device_ids.append(device_id)
-                        else:
+                        if device_id is None:
                             self.log("No device found in Cisco Catalyst Center with {0}: {1}".format(param_name, param), "INFO")
+                        else:
+                            if port_names:
+                                for port_name in port_names:
+                                    port_id= self.get_port_id_by_device_id(device_id, port_name, param_name, param)
+                                    if port_id is None:
+                                        self.log("Interface: '{0}' is not available for the device with {1}:'{2}'.".format(port_name, param_name, param), "INFO")
+                                    else:
+                                        current_device_ids.append((port_id, "interface", param_name, param, port_name))
+                            else:
+                                current_device_ids.append((device_id, "networkdevice", param_name, param))
 
-        self.log(f"{device_ids}", "DEBUG")
-        # forma a set of device IDs 
-        #  Warns if no valid Id are found, and do not create anything
-        pass
+            self.log("Deduplicating the current_device_ids list for duplicate device IDs", "DEBUG")
+            current_device_ids =  list(set(current_device_ids))
+            device_ids.append(current_device_ids)
+
+        self.log("Successfully retrieved device/port IDs from device_details: {0}\nResult: {1}".format(device_details, device_ids), "DEBUG")
+        return device_ids
 
     def get_device_id_list_by_site_name(self, site_name):
+        site_id= self.get_site_id(site_name)
 
-        pass
+        self.log("Initiating retrieval of device details for site name: '{0}'.".format(site_name), "DEBUG")
 
-    def format_site_details(self):
-        pass
+        try:
+            response = self.dnac._exec(
+                family="site_design",
+                function='get_site_assigned_network_devices',
+                op_modifies=True,
+                params={"site_id": site_id},
+            )
 
-    def get_port_id_by_device_id(self):
-        # self explainatory
-        pass
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_site_assigned_network_devices' for the site name: '{0}': {1}".format(site_name, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No devices found under the site name: {0}, Response empty.".format(site_name)
+                self.log(self.msg, "DEBUG")
+                return None
+            
+            device_id_list=[]
+            for response_ele in response:
+                device_id_list.append(response_ele.get("deviceId"))
+            
+            return device_id_list
+
+        except Exception as e:
+            self.msg = """Error while getting the details of the devices under the site name '{0}' present in
+            Cisco Catalyst Center: {1}""".format(site_name, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
+        
+    def format_site_details(self, site_details):
+
+        device_ids=[]
+        for site_detail in site_details:
+            current_device_ids = []
+            port_names = site_detail.get("port_names")
+            if port_names:
+                self.log("Deduplicating the port_names list for duplicate port names", "DEBUG")
+                port_names =  list(set(port_names))
+            site_names = site_detail.get("site_names")
+            if site_names:
+                for site in site_names:
+                    site_id= self.get_site_id(site)
+                    if site_id is None:
+                        self.log("Site {0} provided in site_details does not exist in Cisco Catalyst Center".format(site), "INFO")
+                        continue
+                    device_ids_list = self.get_device_id_list_by_site_name(site)
+                    if device_ids_list is None:
+                        self.log("No device found under the site '{0}' in Cisco Catalyst Center".format(site), "INFO")
+                    else:
+                        for device_id in device_ids_list:
+                            device_name = self.get_device_name_by_id(device_id)
+                            if port_names:
+                                for port_name in port_names:
+
+                                    port_id= self.get_port_id_by_device_id(device_id, port_name, "hostname", device_name)
+                                    if port_id is None:
+                                        self.log("Interface: '{0}' is not available for the device with {1}:'{2}'.".format(device_id, port_name, "hostname", device_name), "INFO")
+                                    else:
+                                        current_device_ids.append((port_id, "interface", "hostname", device_name, port_name))
+                            else:
+                                current_device_ids.append((device_id, "networkdevice", "hostname", device_name))
+
+            self.log("Deduplicating the current_device_ids list for duplicate device IDs", "DEBUG")
+            current_device_ids =  list(set(current_device_ids))
+            device_ids.append(current_device_ids)
+
+        self.log("Successfully retrieved device/port IDs from site_details: {0}\nResult: {1}".format(site_details, device_ids), "DEBUG")
+        return device_ids
+
+
+        device_id_list = self.get_device_id_list_by_site_name("Global/prime_site_global/prime_site/Bengaluru")
+
+    def get_device_name_by_id(self, device_id):
+
+        self.log("Initiating retrieval of device id details for device with id: {0}:".format(device_id), "DEBUG")
+
+        try:
+            payload={
+                "id": device_id
+            }
+            response = self.dnac._exec(
+                family="devices",
+                function='get_device_list',
+                op_modifies=True,
+                params=payload,
+            )
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_device_list' for the Device with Id: {0}, {1}".format(device_id, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No Device details retrieved for Device with Id: {0}, Response empty.".format(device_id)
+                self.log(self.msg, "DEBUG")
+                return None
+            device_name = response[0].get("hostname")
+
+            return device_name
+
+        except Exception as e:
+            self.msg = """Error while getting the details of Device with Id: {0} present in
+            Cisco Catalyst Center: {2}""".format(device_id, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
 
     def assign_members_on_tag_creation(self, tags):
         assign_members = tags.get("assign_members")
-
 
     def get_diff_merged(self, config):
         tags = self.want.get("tags")
         if tags:
             self.log("Starting Tag Creation/Updation", "DEBUG")
-            tag_in_ccc= self.have.get("tags")
+            tag_in_ccc= self.have.get("tag_id")
+
             if not tag_in_ccc:
                 self.log("Starting the process of creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
                 # self.create_tag(tags).check_return_status()
@@ -1596,6 +1743,8 @@ class Tags(DnacBase):
                 if assign_members:
                     device_details= assign_members.get("device_details")
                     formatted_device_details = self.format_device_details(device_details)
+                    site_details= assign_members.get("site_details")
+                    formatted_device_details = self.format_site_details(site_details)
                     pass
                     # code to assign members to the tag. Make it reusable. 
             else:
