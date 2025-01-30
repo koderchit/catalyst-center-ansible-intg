@@ -1235,12 +1235,12 @@ class Tags(DnacBase):
         tags = config.get("tags")
         if tags:
             tag_name= tags.get("name")
-            tag_id= self.get_tag_id(tag_name)
-            if not tag_id:
-                self.msg= "Tag ID for {0} not available in Cisco Catalyst Center".format(tag_name)
+            tag_info= self.get_tag_info(tag_name)
+            if not tag_info:
+                self.msg= "Tag Details for {0} are not available in Cisco Catalyst Center".format(tag_name)
                 self.log(self.msg, "DEBUG")
             else:
-                have["tag_id"]= tag_id
+                have["tag_info"]= tag_info
         self.have= have
 
         return self
@@ -1472,6 +1472,7 @@ class Tags(DnacBase):
         if port_rules:
             dynamic_rules.append(port_rules)
 
+        self.log(dynamic_rules)
         return dynamic_rules
 
     def create_tag(self, tags):
@@ -1482,7 +1483,6 @@ class Tags(DnacBase):
         port_rules = tags.get("port_rules")
 
         formatted_device_rules = self.format_device_rules(device_rules)
-
         formatted_port_rules = self.format_port_rules(port_rules)
 
         dynamic_rules= self.combine_device_port_rules(formatted_device_rules, formatted_port_rules)
@@ -1490,8 +1490,9 @@ class Tags(DnacBase):
             "name": tag_name,
             "description": description,
         }
+
         if dynamic_rules:
-            tag_payload["dynamicRules"] = dynamic_rules,
+            tag_payload["dynamicRules"] = dynamic_rules
         task_name = "create_tag"
         paramaters = {"payload": tag_payload}
         task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
@@ -1506,6 +1507,40 @@ class Tags(DnacBase):
         self.created_tag.append(tag_name)
 
         return self
+
+    def get_tag_info(self, tag_name):
+
+        self.log("Initiating retrieval of tag details for tag name: '{0}'.".format(tag_name), "DEBUG")
+
+        try:
+            response = self.dnac._exec(
+                family="tag",
+                function='get_tag',
+                op_modifies=True,
+                params={"name": tag_name},
+            )
+
+            # Check if the response is empty
+            response = response.get("response")
+            self.log("Received API response from 'get_tag' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
+
+            if not response:
+                self.msg = "No tag details retrieved for tag name: {0}, Response empty.".format(tag_name)
+                self.log(self.msg, "DEBUG")
+                return None
+            tag_info = response[0]
+            
+            return tag_info
+
+        except Exception as e:
+            self.msg = """Error while getting the details of Tag with given name '{0}' present in
+            Cisco Catalyst Center: {1}""".format(tag_name, str(e))
+            self.fail_and_exit(self.msg)
+
+        return None
+
+    def update_tag(self, tags):
+        pass    
 
     def get_device_id_by_param(self, param, param_value):
         self.log("Initiating retrieval of device id details for device with {0}: '{1}' ".format(param, param_value), "DEBUG")
@@ -1781,11 +1816,8 @@ class Tags(DnacBase):
         tag_name = tags.get("name")
         self.create_tag_membership(tag_name, member_details)
         return self
-
-    # def update_interface_membership(self, member_detail, tags_list):
-    #     pass
     
-    def get_network_device_memberships(self, network_device_details):
+    def get_tags_associated_with_the_network_devices(self, network_device_details):
         
         self.log("Initiating retrieval of tags associated with network devices: {0}".format(network_device_details), "DEBUG")
         fetched_tags_details={}
@@ -1799,9 +1831,10 @@ class Tags(DnacBase):
             payload={
                 "ids": device_ids
             }
+
             response = self.dnac._exec(
                 family="tag",
-                function='retrieve_tags_associated_with_network_devices',
+                function='query_the_tags_associated_with_network_devices',
                 op_modifies=True,
                 params=payload,
             )
@@ -1812,16 +1845,17 @@ class Tags(DnacBase):
             if not response:
                 self.msg = "No tags details retrieved for network_device_details: {0}, Response empty.".format(network_device_details)
                 self.log(self.msg, "DEBUG")
-                return None
+                return fetched_tags_details
             
-            self.log(response)
             for response_ in response:
                 device_id = response_.get("id")
                 tags = response_.get("tags")
-                for tag in tags:
-                    tag_name = tag.get("name")
-                    tag_id = tag.get("id")
-                    fetched_tags_details[device_id].append((tag_name, tag_id))
+                if tags is not None:
+                    for tag in tags:
+                        pass
+                        tag_name = tag.get("name")
+                        tag_id = tag.get("id")
+                        fetched_tags_details[device_id].append((tag_name, tag_id))
 
             return fetched_tags_details
 
@@ -1829,10 +1863,9 @@ class Tags(DnacBase):
             self.msg = """Error while getting the tags details of network_device_details: {0} present in
             Cisco Catalyst Center: {1}""".format(network_device_details, str(e))
             self.fail_and_exit(self.msg)
-
-        return None
+#  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
     
-    def get_interface_memberships(self, interface_details):
+    def get_tags_associated_with_the_interfaces(self, interface_details):
         
         self.log("Initiating retrieval of tags associated with interfaces: {0}".format(interface_details), "DEBUG")
         fetched_tags_details={}
@@ -1848,27 +1881,30 @@ class Tags(DnacBase):
             }
             response = self.dnac._exec(
                 family="tag",
-                function='retrieve_tags_associated_with_the_interfaces',
+                function='query_the_tags_associated_with_interfaces',
                 op_modifies=True,
                 params=payload,
             )
             # Check if the response is empty
             response = response.get("response")
-            self.log("Received API response from 'retrieve_tags_associated_with_the_interfaces' for the payload: {0}, {1}".format(payload, str(response)), "DEBUG")
-
+            self.log("Received API response from 'retrieve_tags_associated_with_the_interfaces' for the payload: {0} is: {1}".format(payload, str(response)), "DEBUG")
+            self.log(fetched_tags_details)
             if not response:
                 self.msg = "No tags details retrieved for interface_details: {0}, Response empty.".format(interface_details)
                 self.log(self.msg, "DEBUG")
-                return None
+                return fetched_tags_details
             
             self.log(response)
             for response_ in response:
                 interface_id = response_.get("id")
                 tags = response_.get("tags")
-                for tag in tags:
-                    tag_name = tag.get("name")
-                    tag_id = tag.get("id")
-                    fetched_tags_details[interface_id].append((tag_name, tag_id))
+                self.log(interface_id)
+                self.log(tags)
+                if tags is not None:
+                    for tag in tags:
+                        tag_name = tag.get("name")
+                        tag_id = tag.get("id")
+                        fetched_tags_details[interface_id].append((tag_name, tag_id))
 
             return fetched_tags_details
 
@@ -1879,10 +1915,66 @@ class Tags(DnacBase):
 
         return None
 
+    def compare_and_update_tag_membership(self, existing_tags, new_tags):
+
+        self.log("EXisting Tags: {0}".format(existing_tags))
+        self.log("New Tags: {0}".format(new_tags))
+        existing_set = set(existing_tags)
+        new_set = set(new_tags)
+        self.log(existing_set)
+        self.log(new_set)
+
+        updated_tags=[]
+        state= self.params.get("state")
+        if state == "merged":
+            updated_tags = list(existing_set | new_set)
+        elif state =="deleted":
+            updated_tags = list(existing_set - new_set)
+        
+        # Sorted existing Tags 
+        existing_tags= list(existing_set)
+        needs_update = updated_tags != existing_tags
+        self.log(needs_update)
+        self.log(updated_tags)
+
+        return needs_update, updated_tags
+
+    def update_tags_associated_with_the_network_devices(self, payload):
+        self.log("Starting to update tags associated with the network devices.", "INFO")
+
+        task_name = "update_tags_associated_with_the_network_devices"
+
+        paramaters = {"payload": payload}
+        task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
+        if not task_id:
+            self.msg = "Unable to retrieve the task_id for the task '{0} for the payload {1}'.".format(task_name, payload)
+            self.set_operation_result("failed", False, self.msg, "ERROR")
+            return self
+
+        success_msg = "Updated Tags associated with the network devices successfully in the Cisco Catalyst Center"
+        self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
+        return self
+    
+    def update_tags_associated_with_the_interfaces(self, payload):
+        self.log("Starting to update tags associated with the interfaces.", "INFO")
+
+        task_name = "update_tags_associated_with_the_interfaces"
+
+        paramaters = {"payload": payload}
+        task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
+        if not task_id:
+            self.msg = "Unable to retrieve the task_id for the task '{0} for the payload {1}'.".format(task_name, payload)
+            self.set_operation_result("failed", False, self.msg, "ERROR")
+            return self
+
+        success_msg = "Updated Tags associated with the interfaces successfully in the Cisco Catalyst Center"
+        self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
+        return self
+
     def updating_tags_membership(self, tags_membership):
         
         device_details= tags_membership.get("device_details")
-        tags_name_id = tags_membership.get(tags_name_id)
+        new_tags_details = tags_membership.get("tags_name_id")
         member_details=[]
         if device_details:
             formatted_device_details = self.format_device_details(device_details)
@@ -1902,56 +1994,163 @@ class Tags(DnacBase):
             elif member_detail[1]=='interface':
                 interface_details.append(member_detail)
 
-        if network_device_details:
-            fetched_tags_details = self.get_network_device_memberships(network_device_details)
+        # member detail type is: (id, device_type(interface/networkdevice), hostname, device_name, Interface name)
 
-            #  Write a function to check if the fetched tags membership includes the tags_name_id, if not, prepare the bulk payload. 
-            #  Make sure to code it in a way that it can be used for both deleted and merged states.
-            # same for interface as well.
-            # Just make the bulk payload and call the bulk API. 
-            #  In case of tags membership there will be no need to check if it requires update or not.
+
+        if network_device_details:
+            fetched_tags_details = self.get_tags_associated_with_the_network_devices(network_device_details)
+            payload=[]
+            for network_device_detail in network_device_details:
+                device_id = network_device_detail[0]
+
+                needs_update, updated_tags = self.compare_and_update_tag_membership(fetched_tags_details.get(device_id), new_tags_details)
+                if needs_update:
+                    updated_tags_ids=[]
+                    for tag_detail in updated_tags:
+                        tag_id= tag_detail[1]
+                        tag_id_dict={
+                            "id":tag_id
+                        }
+                        updated_tags_ids.append(tag_id_dict)
+                    current_device_payload={
+                        "id": device_id,
+                        "tags": updated_tags_ids
+                    }
+                    payload.append(current_device_payload)
+                else:
+                    pass
+                    # TODO:Log it and save it in list
+
+            if payload:
+                self.update_tags_associated_with_the_network_devices(payload)
+            else:
+                pass
+            # TODO: LOG IT AND SAVE APPEND
         if interface_details:
-            fetched_tags_details = self.get_interface_memberships(interface_details)
+            fetched_tags_details = self.get_tags_associated_with_the_interfaces(interface_details)
+            payload=[]
+            for interface_detail in interface_details:
+                device_id = interface_detail[0]
+
+                needs_update, updated_tags = self.compare_and_update_tag_membership(fetched_tags_details.get(device_id), new_tags_details)
+                if needs_update:
+                    updated_tags_ids=[]
+                    for tag_detail in updated_tags:
+                        tag_id= tag_detail[1]
+                        tag_id_dict={
+                            "id":tag_id
+                        }
+                        updated_tags_ids.append(tag_id_dict)
+                    current_interface_payload={
+                        "id": device_id,
+                        "tags": updated_tags_ids
+                    }
+                    payload.append(current_interface_payload)
+                else:
+                    pass
+                    # TODO:Log it and save it in list
+
+            if payload:
+                self.update_tags_associated_with_the_interfaces(payload)
+            else:
+                pass
+            # TODO: LOG IT AND SAVE APPEND
             self.log("fetched_tags_details: {0}".format(fetched_tags_details))
 
 
         self.log("Interfaces: {0}".format(interface_details))
         self.log("NetworkDevices: {0}".format(network_device_details))
 
+
+
+    def compare_and_update_tag(self, tag, tag_in_ccc):
+
+        requires_update= False
+        tag_name= tag.get("name")
+        description= tag.get("description")
+        device_rules = tag.get("device_rules")
+        port_rules = tag.get("port_rules")
+
+        formatted_device_rules = self.format_device_rules(device_rules)
+        formatted_port_rules = self.format_port_rules(port_rules)
+
+
+        tag_name_in_ccc= tag_in_ccc.get("name")
+        description_in_ccc= tag_in_ccc.get("description")
+        dynamic_rules_in_ccc = tag_in_ccc.get("deviceRules")
+        dynamic_rule_dict_in_ccc={}
+        for dynamic_rule_in_ccc in dynamic_rules_in_ccc:
+            member_type_in_ccc= dynamic_rule_in_ccc.get("memberType")
+            if member_type_in_ccc == "interface":
+                scope_description_in_ccc = dynamic_rule_in_ccc.get("scopeRule")
+                rules_in_ccc = dynamic_rule_in_ccc.get("rules")
+                dynamic_rule_dict_in_ccc["formatted_device_rules_in_ccc"] = {
+                    "memberType" : member_type_in_ccc,
+                    "rules": rules_in_ccc,
+                    "scopeRule" : scope_description_in_ccc
+                }
+            elif member_type_in_ccc == "networkdevice":
+                rules_in_ccc = dynamic_rule_in_ccc.get("rules")
+                dynamic_rule_dict_in_ccc["formatted_port_rules_in_ccc"] = {
+                    "memberType" : member_type_in_ccc,
+                    "rules": rules_in_ccc,
+                }
+
+        formatted_device_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_device_rules_in_ccc")
+        formatted_port_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_port_rules_in_ccc")
+
+        updated_tag_info={}
+        if tag_name != tag_name_in_ccc:
+            updated_tag_info["name"]= tag_name
+            requires_update = True
+        if description != description_in_ccc:
+            updated_tag_info["description"]= description
+            requires_update = True
+
+        # Note: the formatteed_rules are in a Tree, First deroot the tree and then compare and update the list and form tree again.
+
+
+        return requires_update, updated_tag_info
         
 
+
+
     def get_diff_merged(self, config):
-        tags = self.want.get("tags")
+        tag = self.want.get("tags")
         tags_membership = self.want.get("tags_membership")
 
-        if tags:
+        if tag:
             self.log("Starting Tag Creation/Updation", "DEBUG")
-            tag_in_ccc= self.have.get("tag_id")
+            tag_in_ccc= self.have.get("tag_info")
 
             if not tag_in_ccc:
-                self.log("Starting the process of creating {0} Tag with config: {1}".format(tags.get("name"), tags), "DEBUG")
-                self.create_tag(tags).check_return_status()
-
-                assign_members = tags.get("assign_members")
-                if assign_members:
-                    self.assign_members_on_tag_creation(tags)
-                
+                self.log("Starting the process of creating {0} Tag with config: {1}".format(tag.get("name"), tag), "DEBUG")
+                self.create_tag(tag).check_return_status()
+            
             else:
+                
+                
+
             # Check if the tag in ccc and tag are same, if not, it needs an update, so call the respective apis
                 pass
 
+            assign_members = tag.get("assign_members")
+            if assign_members:
+                self.assign_members_on_tag_creation(tag)
             pass
         if tags_membership:
             self.log("Starting Tag Membership Creation/Updation", "DEBUG")
             tags = tags_membership.get("tags")
             tags_name_id=[]
             for tag in tags:
+                self.log(tag)
                 tag_id = self.get_tag_id(tag)
                 if tag_id is None:
                     self.msg="Tag: {0} is not present in Cisco Catalyst Center. Please create the tag before modifying tag memberships".format(tag)
                     self.set_operation_result("failed", False, self.msg, "ERROR")
-                tags_name_id.append((tag, tag_id))
-            
+                else:
+                    tags_name_id.append((tag, tag_id))
+                    
             tags_membership["tags_name_id"] = tags_name_id
             self.updating_tags_membership(tags_membership)
         
