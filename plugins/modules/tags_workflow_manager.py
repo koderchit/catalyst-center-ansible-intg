@@ -4,6 +4,10 @@
 # Copyright (c) 2022, Cisco Systems
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+
+#  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
+#  TODO: add proper logs to each function.
+
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
     DnacBase,
@@ -221,7 +225,7 @@ class Tags(DnacBase):
                         'type': 'dict',
                         'elements': 'dict',
                         'grouping_category': {'type': 'str','required': True},
-                        'inherit': {'type': 'bool', 'default': False},
+                        'inherit': {'type': 'bool', 'default': True},
                         'group_members': {
                             'type': 'list',
                             'elements': 'str',
@@ -1467,10 +1471,10 @@ class Tags(DnacBase):
     def combine_device_port_rules(self, device_rules, port_rules):
         
         dynamic_rules=[]
-        if device_rules:
-            dynamic_rules.append(device_rules)
         if port_rules:
             dynamic_rules.append(port_rules)
+        if device_rules:
+            dynamic_rules.append(device_rules)
 
         self.log(dynamic_rules)
         return dynamic_rules
@@ -1915,29 +1919,93 @@ class Tags(DnacBase):
 
         return None
 
-    def compare_and_update_tag_membership(self, existing_tags, new_tags):
+    def compare_and_update_list(self, existing_list, new_list):
 
-        self.log("EXisting Tags: {0}".format(existing_tags))
-        self.log("New Tags: {0}".format(new_tags))
-        existing_set = set(existing_tags)
-        new_set = set(new_tags)
+    #  Works only in case of primary list elements, 
+        self.log("Existing List: {0}".format(existing_list))
+        self.log("New List: {0}".format(new_list))
+        existing_set = set(existing_list)
+        new_set = set(new_list)
         self.log(existing_set)
         self.log(new_set)
 
-        updated_tags=[]
+        updated_list=[]
         state= self.params.get("state")
         if state == "merged":
-            updated_tags = list(existing_set | new_set)
+            updated_list = list(existing_set | new_set)
         elif state =="deleted":
-            updated_tags = list(existing_set - new_set)
+            updated_list = list(existing_set - new_set)
         
-        # Sorted existing Tags 
-        existing_tags= list(existing_set)
-        needs_update = updated_tags != existing_tags
+        # Sorted existing List 
+        existing_list= sorted(existing_list)
+        updated_list= sorted(updated_list)
+        
+        needs_update = updated_list != existing_list
         self.log(needs_update)
-        self.log(updated_tags)
+        self.log(updated_list)
 
-        return needs_update, updated_tags
+        return needs_update, updated_list
+    
+    # def compare_and_update_list_of_dict(self, existing_list, new_list):
+    #     self.log("Existing List: {0}".format(existing_list))
+    #     self.log("New List: {0}".format(new_list))
+
+    #     # Convert each dictionary to a frozenset for comparison
+    #     existing_set = {frozenset(d.items()) for d in existing_list}
+    #     new_set = {frozenset(d.items()) for d in new_list}
+
+    #     self.log(existing_set)
+    #     self.log(new_set)
+
+    #     updated_list = []
+    #     state = self.params.get("state")
+        
+    #     if state == "merged":
+    #         updated_list = [dict(fs) for fs in (existing_set | new_set)]
+    #     elif state == "deleted":
+    #         updated_list = [dict(fs) for fs in (existing_set - new_set)]
+
+    #     # Sorted existing List (optional for dictionary comparison)
+    #     existing_list = [dict(fs) for fs in existing_set]
+        
+    #     self.log("updated  List: {0}".format(updated_list))
+    #     self.log("existing List: {0}".format(existing_list))
+
+    #     # Check if there's a difference
+    #     needs_update = updated_list != existing_list
+    #     self.log(needs_update)
+    #     self.log(updated_list)
+
+    #     return needs_update, updated_list
+
+    def compare_and_update_list_of_dict(self, existing_list, new_list):
+        self.log("Existing List: {0}".format(existing_list))
+        self.log("New List: {0}".format(new_list))
+
+        updated_list = []
+        state = self.params.get("state")
+
+        if state == "merged":
+            # Merge while preserving order
+            updated_list = existing_list.copy()
+            for new_dict in new_list:
+                if new_dict not in existing_list:  # Check if new_dict is already in existing_list
+                    updated_list.append(new_dict)
+
+        elif state == "deleted":
+            # Delete elements in new_list from existing_list while preserving order
+            updated_list = [d for d in existing_list if d not in new_list]
+
+        self.log("Updated List: {0}".format(updated_list))
+        self.log("Existing List: {0}".format(existing_list))
+
+        # Check if there's a difference
+        needs_update = updated_list != existing_list
+        self.log(needs_update)
+        self.log(updated_list)
+
+        return needs_update, updated_list
+
 
     def update_tags_associated_with_the_network_devices(self, payload):
         self.log("Starting to update tags associated with the network devices.", "INFO")
@@ -2003,7 +2071,7 @@ class Tags(DnacBase):
             for network_device_detail in network_device_details:
                 device_id = network_device_detail[0]
 
-                needs_update, updated_tags = self.compare_and_update_tag_membership(fetched_tags_details.get(device_id), new_tags_details)
+                needs_update, updated_tags = self.compare_and_update_list(fetched_tags_details.get(device_id), new_tags_details)
                 if needs_update:
                     updated_tags_ids=[]
                     for tag_detail in updated_tags:
@@ -2032,7 +2100,7 @@ class Tags(DnacBase):
             for interface_detail in interface_details:
                 device_id = interface_detail[0]
 
-                needs_update, updated_tags = self.compare_and_update_tag_membership(fetched_tags_details.get(device_id), new_tags_details)
+                needs_update, updated_tags = self.compare_and_update_list(fetched_tags_details.get(device_id), new_tags_details)
                 if needs_update:
                     updated_tags_ids=[]
                     for tag_detail in updated_tags:
@@ -2061,11 +2129,124 @@ class Tags(DnacBase):
         self.log("Interfaces: {0}".format(interface_details))
         self.log("NetworkDevices: {0}".format(network_device_details))
 
+    def compare_and_update_scope_description(self, scope_description, scope_description_in_ccc):
+
+        requires_update = False
+        group_type = scope_description.get("groupType") 
+        self.log("REEEEEEE")
+        self.log(group_type)
+        self.log(scope_description_in_ccc)
+        group_type_in_ccc = scope_description_in_ccc.get("groupType") 
+
+        group_members =  scope_description.get("scopeObjectIds")
+        group_members_in_ccc =  scope_description_in_ccc.get("scopeObjectIds")
+        
+        inherit = scope_description.get("inherit")
+        inherit_in_ccc = scope_description_in_ccc.get("inherit")
+
+        updated_scope_description = {
+            "memberType": "networkdevice"
+        }
+
+        if group_type== group_type_in_ccc:
+            updated_scope_description["groupType"] = group_type
+            
+            updated_scope_description["inherit"] = inherit
+            if inherit != inherit_in_ccc:
+                requires_update = True
+            updated_scope_description["inherit"] = scope_description.get("inherit")
+            tmp_requires_update, updated_scope_description["scopeObjectIds"]= self.compare_and_update_list(group_members_in_ccc, group_members)
+            requires_update= requires_update | tmp_requires_update
+
+        else:
+            requires_update = True
+            updated_scope_description["groupType"] = group_type
+            updated_scope_description["inherit"] = scope_description.get("inherit")
+            updated_scope_description["scopeObjectIds"] = group_members
+
+        self.log(scope_description)
+        self.log(scope_description_in_ccc)
+        self.log(requires_update)
+
+        return requires_update, updated_scope_description
+        
+    def ungroup_rules_tree_into_list(self, rules):
+        """
+        Recursively extracts all leaf nodes (base rules) from the given dictionary structure.
+        """
+        leaf_nodes = []
+        
+        # Check if the current dictionary has 'items' (indicating nested conditions)
+        if isinstance(rules, dict) and 'items' in rules:
+            for item in rules['items']:
+                # Recursively process each item
+                leaf_nodes.extend(self.ungroup_rules_tree_into_list(item))
+        else:
+            # If no 'items', it's a leaf node
+            leaf_nodes.append(rules)
+        
+        return leaf_nodes
+
+    def compare_and_update_rules(self, rules, rules_in_ccc):
+
+        ungrouped_rules = self.ungroup_rules_tree_into_list(rules) 
+        ungrouped_rules_in_ccc = self.ungroup_rules_tree_into_list(rules_in_ccc) 
+
+        requires_update, updated_rules = self.compare_and_update_list_of_dict(ungrouped_rules_in_ccc, ungrouped_rules)
+
+        updated_rules = self.group_rules_into_tree(updated_rules)
+
+        self.log(requires_update)
+
+        return requires_update, updated_rules
+
+    def compare_and_update_port_rules(self,port_rules, port_rules_in_ccc):
+        requires_update = False
+        scope_description = port_rules.get("scopeRule")
+        scope_description_in_ccc = port_rules_in_ccc.get("scopeRule")
+
+        self.log("ZEEEEE")
+        self.log(scope_description_in_ccc)
+
+        tmp_required_update, updated_scope_description = self.compare_and_update_scope_description(scope_description, scope_description_in_ccc)
+        requires_update = tmp_required_update | requires_update
+
+        rules = port_rules.get("rules")
+        rules_in_ccc = port_rules_in_ccc.get("rules")
+
+        tmp_requires_update, updated_rules= self.compare_and_update_rules(rules, rules_in_ccc)
+        requires_update = tmp_requires_update | requires_update
+
+        updated_port_rules={
+            "memberType" : "interface",
+            "rules": updated_rules,
+            "scopeRule" : updated_scope_description
+        }
+        self.log(requires_update)
+
+        return requires_update, updated_port_rules
+        
+    def compare_and_update_device_rules(self, device_rules, device_rules_in_ccc):
+        
+        requires_update = False
+        rules = device_rules.get("rules")
+        rules_in_ccc = device_rules_in_ccc.get("rules")
+
+        tmp_requires_update, updated_rules= self.compare_and_update_rules(rules, rules_in_ccc)
+        requires_update = tmp_requires_update | requires_update
+
+        updated_device_rules={
+            "memberType" : "networkdevice",
+            "rules": updated_rules,
+        }
+        self.log(requires_update)
+        return requires_update, updated_device_rules
 
 
     def compare_and_update_tag(self, tag, tag_in_ccc):
 
         requires_update= False
+
         tag_name= tag.get("name")
         description= tag.get("description")
         device_rules = tag.get("device_rules")
@@ -2077,38 +2258,53 @@ class Tags(DnacBase):
 
         tag_name_in_ccc= tag_in_ccc.get("name")
         description_in_ccc= tag_in_ccc.get("description")
-        dynamic_rules_in_ccc = tag_in_ccc.get("deviceRules")
+        dynamic_rules_in_ccc = tag_in_ccc.get("dynamicRules")
         dynamic_rule_dict_in_ccc={}
+
         for dynamic_rule_in_ccc in dynamic_rules_in_ccc:
             member_type_in_ccc= dynamic_rule_in_ccc.get("memberType")
             if member_type_in_ccc == "interface":
                 scope_description_in_ccc = dynamic_rule_in_ccc.get("scopeRule")
                 rules_in_ccc = dynamic_rule_in_ccc.get("rules")
-                dynamic_rule_dict_in_ccc["formatted_device_rules_in_ccc"] = {
+                dynamic_rule_dict_in_ccc["formatted_port_rules_in_ccc"] = {
                     "memberType" : member_type_in_ccc,
                     "rules": rules_in_ccc,
                     "scopeRule" : scope_description_in_ccc
                 }
             elif member_type_in_ccc == "networkdevice":
                 rules_in_ccc = dynamic_rule_in_ccc.get("rules")
-                dynamic_rule_dict_in_ccc["formatted_port_rules_in_ccc"] = {
+                dynamic_rule_dict_in_ccc["formatted_device_rules_in_ccc"] = {
                     "memberType" : member_type_in_ccc,
                     "rules": rules_in_ccc,
                 }
 
+        self.log(dynamic_rule_dict_in_ccc)
         formatted_device_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_device_rules_in_ccc")
         formatted_port_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_port_rules_in_ccc")
 
         updated_tag_info={}
         if tag_name != tag_name_in_ccc:
-            updated_tag_info["name"]= tag_name
             requires_update = True
+
         if description != description_in_ccc:
-            updated_tag_info["description"]= description
             requires_update = True
+
+        tmp_requires_update, updated_device_rules = self.compare_and_update_device_rules(formatted_device_rules, formatted_device_rules_in_ccc)
+        requires_update = tmp_requires_update | requires_update
+
+        tmp_requires_update, updated_port_rules = self.compare_and_update_port_rules(formatted_port_rules, formatted_port_rules_in_ccc)
+        requires_update = tmp_requires_update | requires_update
+
+        updated_dynamic_rules= self.combine_device_port_rules(updated_device_rules, updated_port_rules)
+
+        updated_tag_info={
+            "name": tag_name,
+            "description": description,
+            "dynamic_rules": updated_dynamic_rules
+        }
 
         # Note: the formatteed_rules are in a Tree, First deroot the tree and then compare and update the list and form tree again.
-
+        self.log(requires_update)
 
         return requires_update, updated_tag_info
         
@@ -2128,8 +2324,11 @@ class Tags(DnacBase):
                 self.create_tag(tag).check_return_status()
             
             else:
-                
-                
+                self.log("MEEEEEEE")
+
+                requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
+                self.log(requires_update)
+                self.log(updated_tag_info)
 
             # Check if the tag in ccc and tag are same, if not, it needs an update, so call the respective apis
                 pass
