@@ -7,7 +7,9 @@
 
 #  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
 #  TODO: add proper logs to each function.
+#  TODO: Check all the logs and remove unnecessary logs
 #  TODO: check for all the pass statements and remove where not needed.
+#  TODO: remove all the TODO statements as well.
 
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
@@ -176,8 +178,26 @@ class Tags(DnacBase):
     def __init__(self, module):
         super().__init__(module)
         self.supported_states = ["merged", "deleted"]
-        self.created_tag, self.updated_tag, self.no_update_tag = [], [], []
+        self.created_tag, self.updated_tag, self.not_updated_tag = [], [], []
+        self.assigned_members=[], self.not_assigned_members=[]
+
+        #  List of member_details
+    #  Member details is: Dict of
+    # {
+    #     "id": device_id, 
+    #     "device_type": "networkdevice"/"interface",
+    #     "device_identifier": "hostname", etc
+    #     "device_value": device_name, etc
+    #     "interface_name": interface_name/None
+    #     "site_name": site_name/None
+    #     "reason": Failing Reason.
+    #     "Tags":[List of tag names]
+    # }
+
+        self.updated_tags_membership=[], self.not_updated_tags_membership=[]
         self.deleted_tag, self.absent_tag= [], []
+        self.deleted_tags_membership=[], self.not_deleted_tags_membership=[]
+        self.absent_site=[]
 
     def validate_input(self):
         """
@@ -1289,6 +1309,8 @@ class Tags(DnacBase):
             "name" : name,
             "value" : value
         }
+
+        self.log("Formatted rule representation for Input:{0} is Output:{1}".format(rule, formatted_rule), "INFO")
         return formatted_rule
     
     def sorting_rule_descriptions(self, rule_descriptions):
@@ -1325,6 +1347,8 @@ class Tags(DnacBase):
                 dict: Hierarchical dictionary structure.
         """
 
+        if not rule_descriptions:
+            return None
         leaf_nodes = rule_descriptions
         # Group leaf nodes by 'name'
         grouped_nodes = defaultdict(list)
@@ -1373,9 +1397,9 @@ class Tags(DnacBase):
     def format_device_rules(self, device_rules):
 
         if device_rules is None:
-            return device_rules
+            return None
         
-        rule_descriptions= device_rules.get("rule_descriptions")
+        rule_descriptions = device_rules.get("rule_descriptions")
         
         formatted_rule_descriptions=[]
         for device_rule in rule_descriptions:
@@ -1394,7 +1418,7 @@ class Tags(DnacBase):
             "memberType" : "networkdevice",
             "rules": grouped_device_rules
         }
-
+        self.log("Formatted Device rules for Input:{0} is Output:{1}".format(device_rules, formatted_device_rules), "INFO")
         return formatted_device_rules
 
     def format_scope_description(self, scope_description):
@@ -1438,7 +1462,7 @@ class Tags(DnacBase):
     def format_port_rules(self, port_rules):
         
         if port_rules is None:
-            return port_rules
+            return None
         
         rule_descriptions= port_rules.get("rule_descriptions")
         scope_description= port_rules.get("scope_description")
@@ -1446,10 +1470,10 @@ class Tags(DnacBase):
         self.log(port_rules, "DEBUG")
         
         formatted_rule_descriptions=[]
-        for port_rule in rule_descriptions:
-            formatted_rule_description= self.format_rule_representation(port_rule)
-            formatted_rule_descriptions.append(formatted_rule_description)
-
+        if rule_descriptions:
+            for port_rule in rule_descriptions:
+                formatted_rule_description= self.format_rule_representation(port_rule)
+                formatted_rule_descriptions.append(formatted_rule_description)
         # Sorting it so that its easier to compare.
         formatted_rule_descriptions_list= self.sorting_rule_descriptions(formatted_rule_descriptions)
         
@@ -1868,7 +1892,6 @@ class Tags(DnacBase):
             self.msg = """Error while getting the tags details of network_device_details: {0} present in
             Cisco Catalyst Center: {1}""".format(network_device_details, str(e))
             self.fail_and_exit(self.msg)
-#  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
     
     def get_tags_associated_with_the_interfaces(self, interface_details):
         
@@ -1975,7 +1998,6 @@ class Tags(DnacBase):
 
         return needs_update, updated_list
 
-
     def update_tags_associated_with_the_network_devices(self, payload):
         self.log("Starting to update tags associated with the network devices.", "INFO")
 
@@ -2032,7 +2054,6 @@ class Tags(DnacBase):
                 interface_details.append(member_detail)
 
         # member detail type is: (id, device_type(interface/networkdevice), hostname, device_name, Interface name)
-
 
         if network_device_details:
             fetched_tags_details = self.get_tags_associated_with_the_network_devices(network_device_details)
@@ -2303,12 +2324,33 @@ class Tags(DnacBase):
 
         return self
 
+    def delete_tag(self, tag, tag_id):
+        self.log("Starting the API call to delete tag:'{0}'".format(tag.get("name")), "DEBUG")
+        
+        task_name = "delete_tag"
+        paramaters = {"id": tag_id}
+        task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
+
+        if not task_id:
+            self.msg = "Unable to retrieve the task_id for the task '{0} for the tag {1}'.".format(task_name, tag_name)
+            self.set_operation_result("failed", False, self.msg, "ERROR")
+            return self
+
+        success_msg = "Tag: '{0}' deleted successfully in the Cisco Catalyst Center".format(tag.get("name"))
+        self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
+        # self.created_tag.append(tag_name)
+
+        return self
+
+
+
+
     def get_diff_merged(self, config):
         tag = self.want.get("tags")
         tags_membership = self.want.get("tags_membership")
 
         if tag:
-            self.log("Starting Tag Creation/Updation", "DEBUG")
+            self.log("Starting Tag Creation/Updation for the Tag: {0}".format(tag.get("name")), "DEBUG")
             tag_in_ccc= self.have.get("tag_info")
 
             if not tag_in_ccc:
@@ -2350,7 +2392,66 @@ class Tags(DnacBase):
             self.updating_tags_membership(tags_membership)
 
         return self
-        
+    
+    def get_diff_deleted(self, config):
+        tag = self.want.get("tags")
+        tags_membership = self.want.get("tags_membership")
+
+        if tag:
+            self.log("Starting Tag Deletion for the Tag: {0}".format(tag.get("name")), "DEBUG")
+            pass
+            tag_in_ccc= self.have.get("tag_info")
+            self.log(tag_in_ccc)
+            if not tag_in_ccc:
+                self.log("Tag {0} is not present in Cisco Catalyst Center.".format(tag.get("name")), "DEBUG")
+
+            else:
+                force_delete= tag.get("force_delete")
+                description= tag.get("description")
+                device_rules= tag.get("device_rules")
+                port_rules= tag.get("port_rules")
+
+                if force_delete:
+                    pass
+
+                else:
+                    if not description and not device_rules and not port_rules:
+                        # Entire Tag Deletion Case
+                        self.log("WEEEEEEEEEEE")
+                        tag_id = tag_in_ccc.get("id")
+                        self.delete_tag(tag, tag_id)
+                    else:
+                        pass
+
+                # requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
+
+                # if requires_update:
+                #     self.update_tag(tag = updated_tag_info, tag_id= tag_in_ccc.get("id"))
+                # else:
+                #     pass
+                #     # TODO: Log and update as required.
+                # self.log(requires_update)
+                # self.log(updated_tag_info)
+
+
+        if tags_membership:
+            self.log("Starting Tag Membership Deletion", "DEBUG")
+            tags = tags_membership.get("tags")
+            tags_name_id=[]
+            for tag in tags:
+                self.log(tag)
+                tag_id = self.get_tag_id(tag)
+                if tag_id is None:
+                    self.msg="Tag: {0} is not present in Cisco Catalyst Center. Please create the tag before modifying tag memberships".format(tag)
+                    self.set_operation_result("failed", False, self.msg, "ERROR")
+                else:
+                    tags_name_id.append((tag, tag_id))
+                    
+            tags_membership["tags_name_id"] = tags_name_id
+            self.updating_tags_membership(tags_membership)
+
+        return self
+
     def int_fail(self, msg="Intentional Fail "):
         self.msg = msg
         self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -2412,19 +2513,6 @@ def main():
     ccc_tags.validate_input().check_return_status()
     ccc_tags.debugg(f"Validated Config: {ccc_tags.validated_config}")
     config_verify = ccc_tags.params.get("config_verify")
-
-
-    # payload={
-    #     "id": "jknsadfbk",
-    #     "memberType":"networkdevice",
-    #     "memberId":["haijsf"]    
-    # }
-    # task_name = "add_members_to_the_tag"
-    # task_id = ccc_tags.get_taskid_post_api_call("tag", task_name, payload)
-
-    # if not task_id:
-    #     ccc_tags.msg = "Unable to retrieve the task_id for the task '{0} for the tag {1}'.".format(task_name, tag_name)
-    #     ccc_tags.set_operation_result("failed", False, ccc_tags.msg, "ERROR")
 
     for config in ccc_tags.validated_config:
         ccc_tags.reset_values()
