@@ -7,6 +7,7 @@
 
 #  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
 #  TODO: add proper logs to each function.
+#  TODO: check for all the pass statements and remove where not needed.
 
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
@@ -1945,38 +1946,6 @@ class Tags(DnacBase):
         self.log(updated_list)
 
         return needs_update, updated_list
-    
-    # def compare_and_update_list_of_dict(self, existing_list, new_list):
-    #     self.log("Existing List: {0}".format(existing_list))
-    #     self.log("New List: {0}".format(new_list))
-
-    #     # Convert each dictionary to a frozenset for comparison
-    #     existing_set = {frozenset(d.items()) for d in existing_list}
-    #     new_set = {frozenset(d.items()) for d in new_list}
-
-    #     self.log(existing_set)
-    #     self.log(new_set)
-
-    #     updated_list = []
-    #     state = self.params.get("state")
-        
-    #     if state == "merged":
-    #         updated_list = [dict(fs) for fs in (existing_set | new_set)]
-    #     elif state == "deleted":
-    #         updated_list = [dict(fs) for fs in (existing_set - new_set)]
-
-    #     # Sorted existing List (optional for dictionary comparison)
-    #     existing_list = [dict(fs) for fs in existing_set]
-        
-    #     self.log("updated  List: {0}".format(updated_list))
-    #     self.log("existing List: {0}".format(existing_list))
-
-    #     # Check if there's a difference
-    #     needs_update = updated_list != existing_list
-    #     self.log(needs_update)
-    #     self.log(updated_list)
-
-    #     return needs_update, updated_list
 
     def compare_and_update_list_of_dict(self, existing_list, new_list):
         self.log("Existing List: {0}".format(existing_list))
@@ -2242,7 +2211,6 @@ class Tags(DnacBase):
         self.log(requires_update)
         return requires_update, updated_device_rules
 
-
     def compare_and_update_tag(self, tag, tag_in_ccc):
 
         requires_update= False
@@ -2308,8 +2276,32 @@ class Tags(DnacBase):
 
         return requires_update, updated_tag_info
         
+    def update_tag(self, tag, tag_id):
 
+        tag_name= tag.get("name")
+        description= tag.get("description")
+        tag_payload={
+            "name": tag_name,
+            "description": description,
+            "id": tag_id
+        }
+        dynamic_rules = tag.get("dynamic_rules")
+        if dynamic_rules:
+            tag_payload["dynamicRules"] = dynamic_rules
+        task_name = "update_tag"
+        paramaters = {"payload": tag_payload}
+        task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
 
+        if not task_id:
+            self.msg = "Unable to retrieve the task_id for the task '{0} for the tag {1}'.".format(task_name, tag_name)
+            self.set_operation_result("failed", False, self.msg, "ERROR")
+            return self
+
+        success_msg = "Tag: '{0}' updated successfully in the Cisco Catalyst Center".format(tag_name)
+        self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
+        # self.created_tag.append(tag_name)
+
+        return self
 
     def get_diff_merged(self, config):
         tag = self.want.get("tags")
@@ -2327,16 +2319,20 @@ class Tags(DnacBase):
                 self.log("MEEEEEEE")
 
                 requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
+
+                if requires_update:
+                    self.update_tag(tag = updated_tag_info, tag_id= tag_in_ccc.get("id"))
+                else:
+                    pass
+                    # TODO: Log and update as required.
                 self.log(requires_update)
                 self.log(updated_tag_info)
 
-            # Check if the tag in ccc and tag are same, if not, it needs an update, so call the respective apis
-                pass
 
             assign_members = tag.get("assign_members")
             if assign_members:
                 self.assign_members_on_tag_creation(tag)
-            pass
+
         if tags_membership:
             self.log("Starting Tag Membership Creation/Updation", "DEBUG")
             tags = tags_membership.get("tags")
@@ -2352,8 +2348,7 @@ class Tags(DnacBase):
                     
             tags_membership["tags_name_id"] = tags_name_id
             self.updating_tags_membership(tags_membership)
-        
-        
+
         return self
         
     def int_fail(self, msg="Intentional Fail "):
