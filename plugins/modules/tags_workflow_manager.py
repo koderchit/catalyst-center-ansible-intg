@@ -1791,6 +1791,7 @@ class Tags(DnacBase):
                         self.log("No device found under the site '{0}' in Cisco Catalyst Center".format(site), "INFO")
                     else:
                         for device_id in device_ids_list:
+                            device_name = self.get_device_name_by_id(device_id)
                             device_detail_dict={
                                 "id":device_id,
                                 "device_type": "networkdevice",
@@ -1798,7 +1799,6 @@ class Tags(DnacBase):
                                 "device_value": device_name,
                                 "site_name": site
                             }
-                            device_name = self.get_device_name_by_id(device_id)
                             if port_names:
                                 for port_name in port_names:
                                     interface_detail_dict={
@@ -3108,16 +3108,16 @@ class Tags(DnacBase):
         interface_name = membership.get("interface_name", "")
 
         if device_type == "networkdevice":
-            base_msg = "The Device with {0}:{1}".format(device_identifier, device_value)
+            base_msg = "The Device with {0}: {1}".format(device_identifier, device_value)
         elif device_type == "interface":
-            base_msg = "The Interface {0} of device with {1}:{2}".format(interface_name, device_identifier, device_value)
+            base_msg = "The Interface {0} of device with {1}: {2}".format(interface_name, device_identifier, device_value)
         else:
             return ""
 
         if site_name:
             base_msg += " under site:{0}".format(site_name)
 
-        tag_names = ", ".join(tag.get("tag_name", "Unknown") for tag in tags_list) if tags_list else "Unknown"
+        tag_names = ", ".join(tag.get("tag_name", "Unknown") for tag in tags_list) if tags_list else "any tags"
 
         if action == "updated":
             return "{0} has been tagged to {1}".format(base_msg, tag_names)
@@ -3189,7 +3189,6 @@ class Tags(DnacBase):
             self.result["changed"] = True
 
         self.msg = ("\n").join(result_msg_list)
-        self.log(self.msg, "INFO")
         self.set_operation_result("success", self.result["changed"], self.msg, "INFO")
 
         return self
@@ -3262,6 +3261,8 @@ def main():
 
 
 # Tasks:
+# 1) Make design changes, tags to tag and name to tag_name/tag_names
+# 2) ADD PROPER LOGS AND TEST THE ENTIRE WORKFLOW READING ALL THE LOGS, ALSO CHECK ALL THE LOGS.
 # 3) Documentation:
 # 4) SwFS doc
 # 5) Proper Logging, code refactoring.
