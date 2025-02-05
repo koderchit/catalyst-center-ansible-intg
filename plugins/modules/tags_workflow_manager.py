@@ -1660,8 +1660,9 @@ class Tags(DnacBase):
     def deduplicate_list_of_dict(self, list_of_dicts):
         seen = set()
         unique_dicts = []
-
+        self.log(list_of_dicts)
         for d in list_of_dicts:
+            self.log(d)
             # Convert dictionary to a tuple of sorted items (temporary hashable representation)
             identifier = tuple(sorted(d.items()))
             
@@ -1718,10 +1719,9 @@ class Tags(DnacBase):
                                             self.not_updated_tags_memberships.append(interface_detail_dict)
                                         elif state =="deleted":
                                             self.not_deleted_tags_memberships.append(interface_detail_dict)
-
                                     else:
-                                        interface_detail_dict["id"]= port_id, 
-                                        device_ids.append(device_details)
+                                        interface_detail_dict["id"]= port_id
+                                        device_ids.append(interface_detail_dict)
                             else:
                                 device_detail_dict["id"]= device_id
                                 device_ids.append(device_detail_dict)
@@ -1825,9 +1825,6 @@ class Tags(DnacBase):
 
         self.log("Successfully retrieved device/port IDs from site_details: {0}\nResult: {1}".format(site_details, device_ids), "DEBUG")
         return device_ids
-
-
-        device_id_list = self.get_device_id_list_by_site_name("Global/prime_site_global/prime_site/Bengaluru")
 
     def get_device_name_by_id(self, device_id):
 
@@ -1937,46 +1934,48 @@ class Tags(DnacBase):
             fetched_tags_details["{0}".format(device_id)]=[]
             device_ids.append(device_id)
 
-        try:
-            payload={
-                "ids": device_ids
-            }
+        BATCH_SIZE = 500
+        for i in range(0, len(device_ids), BATCH_SIZE):
+            batch = device_ids[i : i + BATCH_SIZE]
+            try:
+                payload={
+                    "ids": batch
+                }
 
-            response = self.dnac._exec(
-                family="tag",
-                function='query_the_tags_associated_with_network_devices',
-                op_modifies=True,
-                params=payload,
-            )
-            # Check if the response is empty
-            response = response.get("response")
-            self.log("Received API response from 'retrieve_tags_associated_with_network_devices' for the payload: {0}, {1}".format(payload, str(response)), "DEBUG")
+                response = self.dnac._exec(
+                    family="tag",
+                    function='query_the_tags_associated_with_network_devices',
+                    op_modifies=True,
+                    params=payload,
+                )
+                # Check if the response is empty
+                response = response.get("response")
+                self.log("Received API response from 'query_the_tags_associated_with_network_devices' for batch {0} payload: {1}, {2}".format(i//BATCH_SIZE + 1,payload, str(response)), "DEBUG")
 
-            if not response:
-                self.log("No tags details retrieved for network_device_details: {0}, Response empty.".format(network_device_details), "DEBUG")
-                return fetched_tags_details
-            
-            for response_ in response:
-                device_id = response_.get("id")
-                tags = response_.get("tags")
-                if tags is not None:
-                    for tag in tags:
-                        pass
-                        tag_name = tag.get("name")
-                        tag_id = tag.get("id")
-                        tag_detail_dict={
-                            "tag_name":tag_name,
-                            "tag_id":tag_id
-                        }
-                        fetched_tags_details[device_id].append(tag_detail_dict)
+                if not response:
+                    self.log("No tags details retrieved for network_device_details: {0}, Response empty.".format(network_device_details), "DEBUG")
+                    continue
+                
+                for response_ in response:
+                    device_id = response_.get("id")
+                    tags = response_.get("tags")
+                    if tags is not None:
+                        for tag in tags:
+                            tag_name = tag.get("name")
+                            tag_id = tag.get("id")
+                            tag_detail_dict={
+                                "tag_name":tag_name,
+                                "tag_id":tag_id
+                            }
+                            fetched_tags_details[device_id].append(tag_detail_dict)
 
-            return fetched_tags_details
-
-        except Exception as e:
-            self.msg = """Error while getting the tags details of network_device_details: {0} present in
-            Cisco Catalyst Center: {1}""".format(network_device_details, str(e))
-            self.fail_and_exit(self.msg)
+            except Exception as e:
+                self.msg = """Error while getting the tags details of network_device_details: {0} for the batch:{1} present in
+                Cisco Catalyst Center: {2}""".format(network_device_details,i//BATCH_SIZE + 1, str(e))
+                self.fail_and_exit(self.msg)
     
+        return fetched_tags_details
+
     def get_tags_associated_with_the_interfaces(self, interface_details):
         
         self.log("Initiating retrieval of tags associated with interfaces: {0}".format(interface_details), "DEBUG")
@@ -1987,49 +1986,48 @@ class Tags(DnacBase):
             fetched_tags_details["{0}".format(interface_id)]=[]
             interface_ids.append(interface_id)
 
-        try:
-            payload={
-                "ids": interface_ids
-            }
-            response = self.dnac._exec(
-                family="tag",
-                function='query_the_tags_associated_with_interfaces',
-                op_modifies=True,
-                params=payload,
-            )
-            # Check if the response is empty
-            response = response.get("response")
-            self.log("Received API response from 'retrieve_tags_associated_with_the_interfaces' for the payload: {0} is: {1}".format(payload, str(response)), "DEBUG")
-            self.log(fetched_tags_details)
-            if not response:
-                self.msg = "No tags details retrieved for interface_details: {0}, Response empty.".format(interface_details)
-                self.log(self.msg, "DEBUG")
-                return fetched_tags_details
-            
-            self.log(response)
-            for response_ in response:
-                interface_id = response_.get("id")
-                tags = response_.get("tags")
-                self.log(interface_id)
-                self.log(tags)
-                if tags is not None:
-                    for tag in tags:
-                        tag_name = tag.get("name")
-                        tag_id = tag.get("id")
-                        tag_detail_dict={
-                            "tag_name":tag_name,
-                            "tag_id":tag_id
-                        }
-                        fetched_tags_details[interface_id].append(tag_detail_dict)
+        BATCH_SIZE = 500
+        for i in range(0, len(interface_ids), BATCH_SIZE):
+            batch = interface_ids[i : i + BATCH_SIZE]
+            try:
+                payload={
+                    "ids": batch
+                }
+                response = self.dnac._exec(
+                    family="tag",
+                    function='query_the_tags_associated_with_interfaces',
+                    op_modifies=True,
+                    params=payload,
+                )
+                # Check if the response is empty
+                response = response.get("response")
+                self.log("Received API response from 'query_the_tags_associated_with_interfaces' for the batch:{0} with payload: {1} is: {2}".format(i//BATCH_SIZE + 1, payload, str(response)), "DEBUG")
+                if not response:
+                    self.msg = "No tags details retrieved for interface_details: {0}, Response empty.".format(interface_details)
+                    self.log(self.msg, "DEBUG")
+                    continue
+                else:
+                    self.log(response)
+                    for response_ in response:
+                        interface_id = response_.get("id")
+                        tags = response_.get("tags")
+                        if tags is not None:
+                            for tag in tags:
+                                tag_name = tag.get("name")
+                                tag_id = tag.get("id")
+                                tag_detail_dict={
+                                    "tag_name":tag_name,
+                                    "tag_id":tag_id
+                                }
+                                fetched_tags_details[interface_id].append(tag_detail_dict)
 
-            return fetched_tags_details
 
-        except Exception as e:
-            self.msg = """Error while getting the tags details of interface_details: {0} present in
-            Cisco Catalyst Center: {1}""".format(interface_details, str(e))
-            self.fail_and_exit(self.msg)
+            except Exception as e:
+                self.msg = """Error while getting the tags details of interface_details: {0} for the batch:{1} present in
+                Cisco Catalyst Center: {2}""".format(interface_details, i//BATCH_SIZE + 1, str(e))
+                self.fail_and_exit(self.msg)
 
-        return None
+        return fetched_tags_details
 
     def compare_and_update_list(self, existing_list, new_list):
 
@@ -2135,12 +2133,19 @@ class Tags(DnacBase):
 
         task_name = "update_tags_associated_with_the_network_devices"
 
-        paramaters = {"payload": payload}
-        task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
-        if not task_id:
-            self.msg = "Unable to retrieve the task_id for the task '{0} for the payload {1}'.".format(task_name, payload)
-            self.set_operation_result("failed", False, self.msg, "ERROR")
-            return self
+        BATCH_SIZE = 500
+        start_index = 0
+
+        while start_index<len(payload):
+            batch= payload[start_index: start_index+BATCH_SIZE]
+            parameters = {"payload": batch}
+            task_id = self.get_taskid_post_api_call("tag", task_name, parameters)
+            if not task_id:
+                self.msg = "Unable to retrieve the task_id for the task '{0} for the batch {1} with the payload {2}'.".format(task_name, start_index//BATCH_SIZE+1 , payload)
+                self.set_operation_result("failed", False, self.msg, "ERROR")
+                break
+            self.log("Successfully retrieved task_id for {0}: {1} for batch {2}.".format(task_name, task_id, start_index//BATCH_SIZE+1), "INFO")
+            start_index += BATCH_SIZE
 
         success_msg = "Updated Tags associated with the network devices successfully in the Cisco Catalyst Center"
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
@@ -2151,13 +2156,20 @@ class Tags(DnacBase):
         self.log("Starting to update tags associated with the interfaces.", "INFO")
 
         task_name = "update_tags_associated_with_the_interfaces"
+        BATCH_SIZE = 500
+        start_index = 0
 
-        paramaters = {"payload": payload}
-        task_id = self.get_taskid_post_api_call("tag", task_name, paramaters)
-        if not task_id:
-            self.msg = "Unable to retrieve the task_id for the task '{0} for the payload {1}'.".format(task_name, payload)
-            self.set_operation_result("failed", False, self.msg, "ERROR")
-            return self
+        while start_index<len(payload):
+            batch= payload[start_index: start_index+BATCH_SIZE]
+            parameters = {"payload": batch}
+
+            task_id = self.get_taskid_post_api_call("tag", task_name, parameters)
+            if not task_id:
+                self.msg = "Unable to retrieve the task_id for the task '{0} for the payload {1}'.".format(task_name, payload)
+                self.set_operation_result("failed", False, self.msg, "ERROR")
+                break
+            self.log("Successfully retrieved task_id for {0}: {1} for batch {2}.".format(task_name, task_id, start_index//BATCH_SIZE+1), "INFO")
+            start_index += BATCH_SIZE
 
         success_msg = "Updated Tags associated with the interfaces successfully in the Cisco Catalyst Center"
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
