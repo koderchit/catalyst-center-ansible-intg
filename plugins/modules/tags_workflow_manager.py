@@ -176,47 +176,68 @@ class Tags(DnacBase):
     """Class containing member attributes for tags workflow manager module"""
 
     def __init__(self, module):
+        """
+        Initializes the Tags class with module-specific configurations.
+
+        Args:
+            module: The module instance being initialized.
+
+        Attributes:
+            supported_states (list): A list of supported states, including "merged" and "deleted".
+            created_tag (list): Stores tags that have been newly created.
+            updated_tag (list): Stores tags that have been updated.
+            not_updated_tag (list): Stores tags that were expected to be updated but were not.
+            deleted_tag (list): Stores tags that have been deleted.
+            absent_tag (list): Stores tags that are absent.
+
+            updated_tags_memberships (list): A list of tag memberships that were successfully updated.
+            not_updated_tags_memberships (list): A list of tag memberships that failed to update.
+            deleted_tags_memberships (list): A list of tag memberships that were successfully deleted.
+            not_deleted_tags_memberships (list): A list of tag memberships that failed to be deleted.
+
+        Schema for a member in tag_memberships (Updated/ Not Updated/ Deleted/ Not deleted):
+            {
+                "id": device_id, 
+                "device_type": "networkdevice" / "interface",
+                "device_identifier": "hostname",  # etc.
+                "device_value": device_name,  # etc.
+                "interface_name": interface_name / None,
+                "site_name": site_name / None,
+                "reason": "Failing reason (only in not_updated/not_deleted memberships)",
+                "tags_list": [List of tag names]  # Present in all memberships
+            }
+
+        Schema for a member in tag_list:
+            {
+                "tag_name": TAG_NAME,
+                "tag_id": TAG_ID
+            }
+        """
         super().__init__(module)
         self.supported_states = ["merged", "deleted"]
         self.created_tag, self.updated_tag, self.not_updated_tag = [], [], []
-
-
-    #  List of member_details
-    #  Member details is: Dict of
-    # {
-    #     "id": device_id, 
-    #     "device_type": "networkdevice"/"interface",
-    #     "device_identifier": "hostname", etc
-    #     "device_value": device_name, etc
-    #     "interface_name": interface_name/None
-    #     "site_name": site_name/None
-    #     "reason": Failing Reason.
-    #     "Tags":[List of tag names]
-    # }
-
-        self.updated_tags_memberships, self.not_updated_tags_memberships=[], []
         self.deleted_tag, self.absent_tag = [], []
-        self.deleted_tags_memberships, self.not_deleted_tags_memberships=[], []
-        self.absent_site=[]
-        self.result["changed"]= False
+
+        self.updated_tags_memberships, self.not_updated_tags_memberships = [], []
+        self.deleted_tags_memberships, self.not_deleted_tags_memberships = [], []
+        self.result["changed"] = False
 
     def validate_input(self):
         """
-        Validate the fields provided in the playbook.
-        Checks the configuration provided in the playbook against a predefined specification
-        to ensure it adheres to the expected structure and data types.
-        Parameters:
-            self: The instance of the class containing the 'config' attribute to be validated.
+        Validate the playbook configuration.
+
+        Description:
+            Checks the configuration provided in the playbook against a predefined specification 
+            to ensure it adheres to the expected structure and data types.
+
+        Args:
+            self (object): The instance of the class that contains the 'config' attribute to be validated.
+
         Returns:
-            The method returns an instance of the class with updated attributes:
-                - self.msg: A message describing the validation result.
-                - self.status: The status of the validation (either 'success' or 'failed').
-                - self.validated_config: If successful, a validated version of the 'config' parameter.
-        Example:
-            To use this method, create an instance of the class and call 'validate_input' on it.
-            If the validation succeeds, 'self.status' will be 'success' and 'self.validated_config'
-            will contain the validated configuration. If it fails, 'self.status' will be 'failed', and
-            'self.msg' will describe the validation issues.
+            self.msg (str): A message describing the validation result.
+            self.status (str): The status of the validation (either 'success' or 'failed').
+            self.validated_config (dict or None): If successful, a validated version of the 'config' parameter;
+                                                otherwise, None.
         """
 
         temp_spec = {
@@ -257,53 +278,12 @@ class Tags(DnacBase):
                     'rule_descriptions': {
                         'type': 'list',
                         'elements': 'dict',
-                        'required': True,
                         'rule_name': {'type': 'str', 'required': True},
                         'search_pattern': {'type': 'str', 'required': True},
                         'value': {'type': 'str', 'required': True},
                         'operation': {'type': 'str', 'default': 'ILIKE'}
                     }
-                },
-                'assign_members': {
-                    'type': 'dict',
-                    'elements': 'dict',
-                    'device_details': {
-                        'type': 'list',
-                        'elements': 'dict',
-                        'ip_addresses': {
-                            'type': 'list',
-                            'elements': 'str',
-                        },
-                        'hostnames': {
-                            'type': 'list',
-                            'elements': 'str',
-                        },
-                        'mac_addresses': {
-                            'type': 'list',
-                            'elements': 'str',
-                        },
-                        'serial_numbers': {
-                            'type': 'list',
-                            'elements': 'str',
-                        },
-                        'port_names': {
-                            'type': 'list',
-                            'elements': 'str',
-                        }
-                    },
-                    'site_details': {
-                        'type': 'list',
-                        'elements': 'dict',
-                        'site_names': {
-                            'type': 'list',
-                            'elements': 'str',
-                        },
-                        'port_names': {
-                            'type': 'list',
-                            'elements': 'str',
-                        }
-                    }
-                },
+                }
             },
             'tags_membership': {
                 'type': 'dict',
@@ -352,26 +332,26 @@ class Tags(DnacBase):
         }
 
         if not self.config:
-            self.msg = "The playbook configuration is empty or missing."
-            self.set_operation_result("failed", False, self.msg, "ERROR")
+            self.msg = "The playbook configuration is empty or missing. Please check the playbook."
+            self.set_operation_result("invalid", False, self.msg, "ERROR")
             return self
+        
         # Validate device params
         valid_temp, invalid_params = self.validate_list_of_dicts(
             self.config, temp_spec
         )
 
-        self.debugg(invalid_params)
 
         if invalid_params:
             self.msg = "The playbook contains invalid parameters: {0}".format(
                 invalid_params)
-            self.set_operation_result("failed", False, self.msg, "ERROR")
+            self.set_operation_result("invalid", False, self.msg, "ERROR")
             return self
+        
         self.validated_config = valid_temp
         self.msg = "Successfully validated playbook configuration parameters using 'validate_input': {0}".format(
             str(valid_temp))
         self.log(self.msg, "INFO")
-
         return self
 
     def validate_str(self,item, param_spec, param_name, invalid_params, module= None):
@@ -1098,14 +1078,13 @@ class Tags(DnacBase):
 
     def get_want(self, config):
         """
-        Collects and validates the desired state configuration for fabric sites and zones from the given playbook configuration.
+        Collects and validates the desired state configuration for tags and tags membership from the given playbook configuration.
         Args:
             self (object): An instance of a class used for interacting with Cisco Catalyst Center.
-            config (dict): A dictionary containing the configuration for the desired state of fabric sites and zones.
-                        It should include a key "fabric_sites" with a list of dictionaries.
+            config (dict): A dictionary containing the configuration for the desired state of tags and tags membership.
         Returns:
             self (object): The instance of the class with the updated `want` attribute containing the validated desired state
-                of fabric sites and zones and updating authentication profile template.
+                of tags and tags membership.
         Description:
             This function processes the provided playbook configuration to determine the desired state of fabric sites
             and zones in the Cisco Catalyst Center.
@@ -3224,9 +3203,8 @@ class Tags(DnacBase):
         return self
 
 def main():
-
-
-    """ main entry point for module execution
+    """ 
+    main entry point for tags workflow manager module execution
     """
 
     element_spec = {'dnac_host': {'required': True, 'type': 'str'},
@@ -3255,24 +3233,19 @@ def main():
     if ccc_tags.compare_dnac_versions(ccc_tags.get_ccc_version(), "2.3.7.9") < 0:
         ccc_tags.msg = (
             "The specified version '{0}' does not support the tagging feature. Supported versions start "
-            "  from '2.3.7.9' onwards. Version '2.3.7.9' introduces APIs for creating, updating and deleting the "
-            "tags and Tag memberships."
+            "from '2.3.7.9' onwards. Version '2.3.7.9' introduces APIs for creating, updating and deleting the "
+            "tags and tag memberships."
             .format(ccc_tags.get_ccc_version())
         )
-        ccc_tags.set_operation_result(
-            "failed", False, ccc_tags.msg, "ERROR").check_return_status()
+        ccc_tags.set_operation_result("invalid", False, ccc_tags.msg, "ERROR").check_return_status()
 
     state = ccc_tags.params.get("state")
 
-
     if state not in ccc_tags.supported_states:
-        ccc_tags.status = "invalid"
-        ccc_tags.msg = "State {0} is invalid".format(state)
-        ccc_tags.check_return_status()
+        ccc_tags.msg = "State '{0}' is invalid. Supported states:{1}. Please check the playbook.".format(state, str(ccc_tags.supported_states))
+        ccc_tags.set_operation_result("invalid", False, ccc_tags.msg, "ERROR").check_return_status()
 
-    # ccc_tags.debugg("PRECHECK at 407")
     ccc_tags.validate_input().check_return_status()
-    ccc_tags.debugg(f"Validated Config: {ccc_tags.validated_config}")
     config_verify = ccc_tags.params.get("config_verify")
 
     for config in ccc_tags.validated_config:
@@ -3290,6 +3263,7 @@ def main():
 
 
 # Tasks:
+# 0) Preety Print the dictionaries in LOG
 # 1) Make design changes, tags to tag and name to tag_name/tag_names
 # 2) ADD PROPER LOGS AND TEST THE ENTIRE WORKFLOW READING ALL THE LOGS, ALSO CHECK ALL THE LOGS.
 # 3) Documentation:
