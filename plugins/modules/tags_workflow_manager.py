@@ -2213,6 +2213,8 @@ class Tags(DnacBase):
             for network_device_detail in network_device_details:
 
                 device_id = network_device_detail.get("id")
+                device_identifier = network_device_detail.get("device_identifier")
+                device_value = network_device_detail.get("device_value")
                 network_device_detail["tags_list"] = new_tags_details
                 
                 needs_update, updated_tags = self.compare_and_update_list_of_dict(fetched_tags_details.get(device_id), new_tags_details)
@@ -2224,6 +2226,11 @@ class Tags(DnacBase):
                             "id":tag_id
                         }
                         updated_tags_ids.append(tag_id_dict)
+                    MAX_TAGS_LIMIT=500
+                    if len(updated_tags_ids)> MAX_TAGS_LIMIT:
+                        self.msg="The maximum tag limit exceed for the device with {0}:{1}. The maximum number of tags A device can have is {2}. ".format(device_identifier, device_value, updated_tags_ids)
+                        self.set_operation_result("failed", False, self.msg, "ERROR")
+
                     current_device_payload={
                         "id": device_id,
                         "tags": updated_tags_ids
@@ -2232,6 +2239,7 @@ class Tags(DnacBase):
                         self.updated_tags_memberships.append(network_device_detail)
                     elif state =="deleted":
                         self.deleted_tags_memberships.append(network_device_detail)
+
 
                     payload.append(current_device_payload)
                 else:
@@ -2256,6 +2264,10 @@ class Tags(DnacBase):
             for interface_detail in interface_details:
                 device_id = interface_detail.get("id")
                 interface_detail["tags_list"] = new_tags_details
+                device_identifier = interface_detail.get("device_identifier")
+                device_value = interface_detail.get("device_value")
+                interface_name = interface_detail.get("interface_name")
+
 
                 needs_update, updated_tags = self.compare_and_update_list_of_dict(fetched_tags_details.get(device_id), new_tags_details)
                 if needs_update:
@@ -2266,6 +2278,12 @@ class Tags(DnacBase):
                             "id":tag_id
                         }
                         updated_tags_ids.append(tag_id_dict)
+
+                    
+                    MAX_TAGS_LIMIT=500
+                    if len(updated_tags_ids)> MAX_TAGS_LIMIT:
+                        self.msg="The maximum tag limit exceed for the interface: {0} with {1}:{2}. The maximum number of tags A device can have is {3}. ".format(interface_name, device_identifier, device_value, updated_tags_ids)
+                        self.set_operation_result("failed", False, self.msg, "ERROR")
                     current_interface_payload={
                         "id": device_id,
                         "tags": updated_tags_ids
@@ -3245,7 +3263,6 @@ def main():
             "failed", False, ccc_tags.msg, "ERROR").check_return_status()
 
     state = ccc_tags.params.get("state")
-
 
 
     if state not in ccc_tags.supported_states:
