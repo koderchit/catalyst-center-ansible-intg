@@ -10,11 +10,13 @@
 #  TODO: Check all the logs and remove unnecessary logs
 #  TODO: check for all the pass statements and remove where not needed.
 #  TODO: remove all the TODO statements as well.
+#  WHen port rule has speed, UI adds some zeroes in the value.
+
+# TESTCASE: WHEN RULE ACCEPTS INT BUT PASSING STRInG OR SOMETHING ELSE IN VALUE
 
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
-    DnacBase,
-    validate_list_of_dicts,
+    DnacBase
 )
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common import validation
@@ -27,14 +29,17 @@ __author__ = ("Archit Soni, Madhan Sankaranarayanan")
 
 DOCUMENTATION = r"""
 ---
+
 module: tags_workflow_manager
-short_description: Create/ Update/ Delete Tag(s) and Tag(s) Memberships in Cisco Catalyst Center.
+short_description: Create/ Update/ Delete Tag(s) and Tag Memberships in Cisco Catalyst Center.
 description:
-  - Create, update, or delete tags in Cisco Catalyst Center.
-  - Define tags with dynamic rules for tagging devices and ports that satisfies the rules.
-  - Manage tag memberships for devices and ports.
-  - Associate tags with devices and ports based on IP Address, MAC Address, hostnames, serial numbers, or port names.
-  - Manage tags assigned to devices and ports under sites.
+  - This module helps users create, update, and delete tags, as well as manage tag memberships in Cisco Catalyst Center.  
+  - It provides the ability to define dynamic rules for tagging devices and ports, ensuring that devices and ports are 
+    automatically tagged based various matching criterias.  
+  - Users can assign, update, or delete tags on devices and ports based on attributes such as IP Address, MAC Address, 
+    hostnames, serial numbers, or port names.
+  - The module also facilitates assigning, updating, or deleting tags for devices and ports within specific sites, 
+    simplifying the management of tags across multiple devices and ports under sites.
 
 version_added: '6.30.0'
 extends_documentation_fragment:
@@ -52,33 +57,42 @@ options:
     choices: [merged, deleted]
     default: merged
   config:
-    description: A list containing detailed configurations for creating, updating, or deleting tags and tags membership. 
+    description: >
+        A list of dictionaries containing detailed configurations for managing REST Endpoints that will receive Audit log
+        and Events from the Cisco Catalyst Center Platform. This list is essential for specifying attributes and
+        parameters required for the lifecycle management of tags and tag memberships. 
     type: list
     elements: dict
     required: true
     suboptions:
       tag:
-        description: A dictionary containing detailed configurations for managing REST Endpoints that will receive Audit log
-            and Events from the Cisco Catalyst Center Platform. This dictionary is essential for specifying attributes and
-            parameters required for the lifecycle management of tags.
+        description: A dictionary containing detailed configurations for creating, updating, or deleting tags.
         type: dict
         elements: dict
         suboptions:
           name:
-            description: This name uniquely identifies the tag for operations such as creating, updating, or deleting. 
-            This parameter is mandatory for any tag management operation.
+            description: >
+              This name uniquely identifies the tag for operations such as creating, updating, or deleting. 
+              This parameter is mandatory for any tag management operation.
             type: str
             required: true
           description:
-            description: A textual description providing details about the tag. This field is optional, but it helps to provide additional context about the tag.
+            description: >
+              A textual description providing details about the tag.
+              This field is optional, but it helps to provide additional context about the tag.
             type: str
           force_delete:
-            description: A boolean flag that forces the deletion of a tag, even if it is associated with devices and ports. It is typically used when the playbook state is set to 'deleted'.
+            description: >
+              A boolean flag that forces the deletion of a tag, even if it is associated with devices and ports.
+              It is typically used when the playbook state is set to 'deleted'. When enabled, it removes all existing 
+              dynamic rules associated with the tag and detaches the tag from all devices and ports and delete the tag.
             type: bool
-            default: False
+            default: false
           device_rules:
-            description: Rules for dynamically tagging devices based on attributes such as IP address, MAC address, 
-                hostname, and serial number. A device that meets the specified criteria will be automatically tagged.
+            description: >
+                Rules for dynamically tagging devices based on attributes such as 
+                device name, device family, device series, IP address, location, version. 
+                A device that meets the specified criteria will be automatically tagged.
                 If multiple device rules are provided, rules with the same `rule_name` will be ORed together, 
                 while rules with different `rule_name` values will be ANDed.
             type: dict
@@ -88,55 +102,68 @@ options:
                 description: List of rules that define how devices will be tagged.
                 type: list
                 elements: dict
-                required: True
+                required: true
                 suboptions:
                   rule_name:
                     description: The name of the rule. 
                     type: str
-                    choices:[device_name, device_family, device_series, ip_address, location, version]
-                    required: True
+                    choices: [device_name, device_family, device_series, ip_address, location, version]
+                    required: true
                   search_pattern:
                     description: The pattern used to search for device attributes.
                     type: str
-                    choices:[contains, equals, starts_with, ends_with]
-                    required: True
+                    choices: [contains, equals, starts_with, ends_with]
+                    required: true
                   value:
                     description: The value that the rule will match against (e.g., specific IP or MAC address).
                     type: str
-                    required: True
+                    required: true
                   operation:
-                    description: The operation used to match the value. 'ILIKE' for case-insensitive matching and 'LIKE' is for case-sensitive matching.
+                    description: >
+                      The operation used to match the respective value to the device.
+                      ILIKE for case-insensitive matching and LIKE is for case-sensitive matching.
                     type: str
-                    choices:[ILIKE, LIKE]
-                    default: 'ILIKE'
+                    choices: [ILIKE, LIKE]
+                    default: ILIKE
           port_rules:
-            description: Rules for dynamically tagging ports based on attributes such as Port Speed, Admin Status,
-                Port Name, Operational Status, Description. A port that meets the specified criteria will be automatically tagged.
+            description: > 
+                Rules for dynamically tagging ports based on attributes such as 
+                Port Name, Port Speed, Admin Status, Operational Status, Description. 
+                A port that meets the specified criteria will be automatically tagged.
                 If multiple port rules are provided, rules with the same `rule_name` will be ORed together, 
                 while rules with different `rule_name` values will be ANDed.
             type: dict
             elements: dict
             suboptions:
               scope_description:
-                description: Describes the scope of the rule, which includes scope category and scope members. 
-                    The port rules will be only applied to ports available under the given scope.
+                description: Describes the device scope of the rule, which includes scope category and scope members. 
+                    The port rules will be only applied to ports of the devices present under the given scope.
                 type: dict
                 elements: dict
                 suboptions:
                   scope_category:
-                    description: The category of scope. It can be either TAG or SITE.
+                    description: >
+                     The category of the scope. It can be either TAG or SITE. 
+                     If TAG is the scope_category, scope_members are tag names that are present in Cisco Catalyst Center
+                     If SITE is the scope_category, scope_members are site name hierarchies that are present in Cisco Catalyst Center
                     choices: [TAG, SITE]
                     type: str
-                    required: True
+                    required: true
                   scope_members:
-                    description: List of scope members (e.g. tag names, site Name hierarchies) that needs to be included in the scope.
+                    description: >
+                      List of scope members (e.g. tag names when scope_category is TAG or site name hierarchies 
+                      when scope_category is SITE) that needs to be included in the scope.
                     type: list
                     elements: str
-                    required: True
+                    required: true
                   inherit:
-                    description: Used when the scope_category is SITE. Determines whether the site should inherit its children.
+                    description: >
+                      A boolean flag that specifies whether the site should inherit its children.
+                      It is typically used when the scope_category is SITE. When enabled, it removes all existing 
+                      dynamic rules associated with the tag and detaches the tag from all devices and ports.
+                      # TODO: Check with pawan and update if necessary.
                     type: bool
-                    default: True
+                    default: true
               rule_descriptions:
                 description: List of rules that define how ports will be tagged.
                 type: list
@@ -145,32 +172,36 @@ options:
                   rule_name:
                     description: The name of the rule.
                     type: str
-                    choices:[speed, admin_status, port_name, operational_status, description]
-                    required: True
+                    choices: [speed, admin_status, port_name, operational_status, description]
+                    required: true
                   search_pattern:
                     description: The pattern used to search for port attributes.
                     type: str
-                    choices:[contains, equals, starts_with, ends_with]
-                    required: True
+                    choices: [contains, equals, starts_with, ends_with]
+                    required: true
                   value:
                     description: The value that the rule will match against (e.g., port name, port speed).
                     type: str
-                    required: True
+                    required: true
                   operation:
-                    description: The operation used to match the value. 'ILIKE' for case-insensitive matching and 'LIKE' is for case-sensitive matching.
+                    description: >
+                      The operation used to match the respective value to the port.
+                      ILIKE for case-insensitive matching and LIKE is for case-sensitive matching.
                     type: str
-                    choices:[ILIKE, LIKE]
+                    choices: [ILIKE, LIKE]
                     default: 'ILIKE'
       tag_memberships:
-        description: Configuration for managing tag memberships for devices and interfaces.
+        description: A dictionary containing detailed configuration for managing tag memberships for devices and interfaces.
         type: dict
         elements: dict
         suboptions:
           tags:
-            description: List of tag names to assign to devices or interfaces.
+            description: >
+              List of tag names to assign to devices or interfaces. 
+              These tags should be present in Cisco Catalyst Center.
             type: list
             elements: str
-            required: True
+            required: true
           device_details:
             description: Details about the devices and interfaces to which tags are to be assigned.
             type: list
@@ -193,8 +224,11 @@ options:
                 type: list
                 elements: str
               port_names:
-                description: List of port names to which the tags are to be assigned.
-                    If port_names is not given, the tags will be assigned to devices instead.
+                description: >
+                  List of port names to which the tags are to be assigned under the devices. 
+                  It is an optional parameter, used as per requirement.
+                  If port_names is not given, the tags will be assigned to devices.
+                  If port_names is given, the tags will be assigned to the ports under the respective devices.
                 type: list
                 elements: str
           site_details:
@@ -206,42 +240,47 @@ options:
                 description: List of the site name hierarchies under which devices or interfaces will be tagged.
                 type: list
                 elements: str
-                required: True
+                required: true
               port_names:
-                description: List of port names to which the tags are to be assigned under the sites.
-                    If port_names is not given, the tags will be assigned to devices instead unser the sites.
+                description: >
+                  List of port names to which the tags are to be assigned under the devices belonging to the 
+                  given sites. It is an optional parameter, used as per requirement.
+                  If port_names is not given, the tags will be assigned to devices under the given sites.
+                  If port_names is given, the tags will be assigned to these ports under devices belonging to the given sites.
                 type: list
                 elements: str
           
 requirements:
-  - dnacentersdk >= 2.9.2
+  - dnacentersdk >= 2.10.3
   - python >= 3.9
 
 notes:
-  - To ensure the module operates correctly for scaled sets, which involve creating or updating fabric sites/zones and handling
-    the updation of authentication profile template, please provide valid input in the playbook. If any failure is encountered,
-    the module will and halt execution without proceeding to further operations.
-  - When deleting fabric sites, make sure to provide the input to remove the fabric zones associated with them in the
-    playbook. Fabric sites cannot be deleted until all underlying fabric zones have been removed and it can be any order as per
-    the module design fabric zones will be deleted first followed by fabric sites.
-  - Parameter 'site_name' is updated to 'site_name_hierarchy'.
-  - SDK Method used are
-    ccc_fabric_sites.FabricSitesZones.get_site
-    ccc_fabric_sites.FabricSitesZones.get_fabric_sites
-    ccc_fabric_sites.FabricSitesZones.get_fabric_zones
-    ccc_fabric_sites.FabricSitesZones.add_fabric_site
-    ccc_fabric_sites.FabricSitesZones.update_fabric_site
-    ccc_fabric_sites.FabricSitesZones.add_fabric_zone
-    ccc_fabric_sites.FabricSitesZones.update_fabric_zone
-    ccc_fabric_sites.FabricSitesZones.get_authentication_profiles
-    ccc_fabric_sites.FabricSitesZones.update_authentication_profile
-    ccc_fabric_sites.FabricSitesZones.delete_fabric_site_by_id
-    ccc_fabric_sites.FabricSitesZones.delete_fabric_zone_by_id
+  - Ensure that all required parameters are correctly provided for successful execution. If any failure is encountered,
+    the module will halt the execution without proceeding to further operations.
+  - If `force_delete` is set to `true` in deleted state, the tag will be forcibly removed from all associated devices and ports and the tag will be deleted
+  - In device_rules and port_rules, rules with the same rule_name are ORed together, while rules with different rule_name values are ANDed together. 
+  - Each device or interface can have a maximum of 500 tags assigned.
+  - SDK Method used are:
+    tags.Tag.add_members_to_the_tag
+    tags.Tag.create_tag
+    tags.Tag.delete_tag
+    tags.Tag.get_device_list
+    tags.Tag.get_interface_details
+    tags.Tag.get_sites
+    tags.Tag.get_site_assigned_network_devices
+    tags.Tag.get_tag
+    tags.Tag.get_tag_members_by_id
+    tags.Tag.query_the_tags_associated_with_network_devices
+    tags.Tag.query_the_tags_associated_with_interfaces
+    tags.Tag.update_tag
+    tags.Tag.update_tags_associated_with_the_interfaces
+    tags.Tag.update_tags_associated_with_the_network_devices
 
 """
 
 EXAMPLES = r"""
-Write example playbooks here #TODO
+
+
 
 """
 
@@ -439,7 +478,7 @@ class Tags(DnacBase):
             return self
         
         self.validated_config = valid_temp
-        self.log("Successfully validated playbook configuration parameters. Validated Config: {0}".format(valid_temp), "INFO")
+        self.msg= "Successfully validated playbook configuration parameters. Validated Config: {0}".format(self.pprint(valid_temp))
         return self
 
     def validate_str(self,item, param_spec, param_name, invalid_params, module= None):
@@ -1050,21 +1089,27 @@ class Tags(DnacBase):
             self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
 
     def get_want(self, config):
-        # TODO:Change the doc string, fabric
         """
-        Collects and validates the desired state configuration for tag and tag memberships from the given playbook configuration.
+        Processes and validates the desired state configuration for tags and tag memberships from the provided playbook.
+
         Args:
-            self (object): An instance of a class used for interacting with Cisco Catalyst Center.
-            config (dict): A dictionary containing the configuration for the desired state of tags and tag memberships.
+            config (dict): The input dictionary containing tag and tag membership details.
+
         Returns:
-            self (object): The instance of the class with the updated `want` attribute containing the validated desired state
-                of tags and tag memberships.
+            object: The instance of the class with the `want` attribute updated to reflect the validated desired state.
+
         Description:
-            This function processes the provided playbook configuration to determine the desired state of fabric sites
-            and zones in the Cisco Catalyst Center.
-            The validated site information is stored in the `want` dictionary under the key "fabric_sites".
-            The `want` attribute of the instance is updated with this dictionary, representing the desired state
-            of the system. The function returns the instance for further processing or method chaining.
+            This function extracts and validates tag details such as name, description, force_delete flag, and associated 
+            device and port rules. It also verifies tag membership assignments for network devices, interfaces, and sites, 
+            ensuring that at least one valid identifier (IP address, hostname, MAC address, or serial number) is provided 
+            for device-level assignments. If validation fails at any stage, an appropriate error message is logged, and 
+            execution is halted. 
+
+            The validated configuration is stored in the `want` dictionary, which includes:
+            - 'tag': Validated tag details (if provided)
+            - 'tag_memberships': Validated tag membership details (if provided)
+
+            This updated `want` dictionary is assigned to the instance for further processing.
         """
 
         self.log("Starting Get Want for the config: {0}".format(self.pprint(config)), "DEBUG")
@@ -1187,7 +1232,7 @@ class Tags(DnacBase):
             self.log(self.msg, "DEBUG")
 
         self.want = want
-        self.msg = "Successfully collected all parameters from the playbook for creating/updating tag and tag memberships"
+        self.msg = "Successfully collected all parameters from the playbook for tag and tag memberships playbook configuration"
         self.log("Desired State (want): {0}".format(self.pprint(self.want)), "INFO")
 
         return self
@@ -1217,6 +1262,7 @@ class Tags(DnacBase):
             else:
                 have["tag_info"]= tag_info
         self.have= have
+        self.msg = "Successfully collected all parameters from the Cisco Catalyst Center for tag and tag memberships playbook configuration"
         self.log("Present State (have): {0}".format(self.pprint(self.have)), "INFO")
         return self
 
@@ -1402,7 +1448,7 @@ class Tags(DnacBase):
         # Sorting it so that its uniform and easier to compare with future updates.
         formatted_rule_descriptions_list= self.sorting_rule_descriptions(formatted_rule_descriptions)
 
-        self.log("Formatted Rule Descriptions In List Format:{0}".format(formatted_rule_descriptions_list), "INFO")
+        self.log("Formatted Rule Descriptions In List Format:{0}".format(self.pprint(formatted_rule_descriptions_list)), "INFO")
 
         grouped_device_rules= self.group_rules_into_tree(formatted_rule_descriptions_list)
         
@@ -1539,7 +1585,7 @@ class Tags(DnacBase):
         if device_rules:
             dynamic_rules.append(device_rules)
 
-        self.log("Combined dynamic_rules for device_rules:{0}, port_rules:{1} are: {2}".format(device_rules, port_rules, dynamic_rules))
+        self.log("Combined dynamic_rules for device_rules:{0}, port_rules:{1} are: {2}".format(self.pprint(device_rules), self.pprint(port_rules), self.pprint(dynamic_rules)), "DEBUG")
         return dynamic_rules
 
     def create_tag(self, tag):
@@ -1598,7 +1644,6 @@ class Tags(DnacBase):
         
         success_msg = "Tag: '{0}' created successfully in the Cisco Catalyst Center".format(tag_name)
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
-        self.created_tag.append(tag_name)
 
         return self
 
@@ -2293,7 +2338,7 @@ class Tags(DnacBase):
 
         updated_list = []
         state = self.params.get("state")
-        self.log("Comparing list of dict for the state: '{0}'".format(state))
+        self.log("Comparing list of dict for the state: '{0}'".format(state), "DEBUG")
         self.log("Existing List: {0}".format(self.pprint(existing_list)), "DEBUG")
         self.log("New List: {0}".format(self.pprint(new_list)), "DEBUG")
 
@@ -2935,7 +2980,6 @@ class Tags(DnacBase):
 
         success_msg = "Tag: '{0}' updated successfully in the Cisco Catalyst Center".format(tag_name)
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
-        self.updated_tag.append(tag_name)
 
         return self
 
@@ -2965,10 +3009,9 @@ class Tags(DnacBase):
 
         success_msg = "Tag: '{0}' deleted successfully in the Cisco Catalyst Center".format(tag_name)
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
-        self.deleted_tag.append(tag_name)
         
         return self
-
+    
     def get_tag_members(self, tag, tag_id):
 
         """
@@ -3195,17 +3238,18 @@ class Tags(DnacBase):
             if not tag_in_ccc:
                 self.log("Starting the process of creating {0} Tag with config: {1}".format(tag_name, tag), "DEBUG")
                 self.create_tag(tag).check_return_status()
-            
+                self.created_tag.append(tag_name)
             else:
                 self.log("Tag: {0} is already present in Cisco Catalyst Center with details: {1}".format(tag_name, tag_in_ccc), "DEBUG")
                 requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
 
                 if requires_update:
-                    self.log("Updating the tag: {0} with config: {1}".format(tag_name, self.pprint(tag)))
+                    self.log("Updating the tag: {0} with config: {1}".format(tag_name, self.pprint(tag)), "DEBUG")
                     self.update_tag(tag = updated_tag_info, tag_id= tag_in_ccc.get("id"))
+                    self.updated_tag.append(tag_name)
                 else:
                     self.not_updated_tag.append(tag_name)
-                    self.log("No update required in the tag: {0}".format(tag_name))
+                    self.log("No update required in the tag: {0}".format(tag_name), "DEBUG")
 
         if tag_memberships:
             self.log("Starting Tag Membership Creation/Updation", "DEBUG")
@@ -3226,6 +3270,7 @@ class Tags(DnacBase):
             tag_memberships["tags_name_id"] = tags_details_list
             self.updating_tag_memberships(tag_memberships)
 
+        self.msg = "Get Diff Merged Completed Successfully"
         return self
     
     def get_diff_deleted(self, config):
@@ -3281,7 +3326,7 @@ class Tags(DnacBase):
                     else:
                         requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
                         if requires_update:
-                            self.log("Starting deletion of the playbook specific paramaters for the tag: {0}".format(tag_name, "DEBUG"))
+                            self.log("Starting deletion of the playbook specific paramaters for the tag: {0}".format(tag_name), "DEBUG")
                             self.update_tag(tag = updated_tag_info, tag_id= tag_in_ccc.get("id"))
                             self.updated_tag.append(tag_name)
                         else:
@@ -3307,6 +3352,8 @@ class Tags(DnacBase):
                     
             tag_memberships["tags_name_id"] = tags_details_list
             self.updating_tag_memberships(tag_memberships)
+
+        self.msg = "Get Diff Deleted Completed Successfully"
 
         return self
 
@@ -3400,10 +3447,10 @@ class Tags(DnacBase):
                 self.log("tag memberships Details present in playbook and Cisco Catalyst Center does not match. Playbook operation might be unsuccessful", "WARNING")
         
         if verify_diff:
-            self.msg="Playbook operation is successful"
+            self.msg="Playbook operation is successful. Verification Completed"
             self.log(self.msg, "INFO")
         else:
-            self.msg="Playbook operation is unsuccessful"
+            self.msg="Playbook operation is unsuccessful."
             self.log(self.msg, "WARNING")
         return self
 
@@ -3471,7 +3518,7 @@ class Tags(DnacBase):
                 self.log("tag memberships Details present in playbook and Cisco Catalyst Center does not match. Playbook operation might be unsuccessful", "WARNING")
         
         if verify_diff:
-            self.msg="Playbook operation is successful"
+            self.msg="Playbook operation is successful. Verification Completed"
             self.log(self.msg, "INFO")
         else:
             self.msg="Playbook operation is unsuccessful"
