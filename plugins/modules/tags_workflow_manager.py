@@ -1032,8 +1032,7 @@ class Tags(DnacBase):
             response = self.dnac._exec(
                 family="tag",
                 function='get_tag',
-                op_modifies=True,
-                params={"name": tag_name},
+                params={"name": tag_name}
             )
 
             response = response.get("response")
@@ -1073,8 +1072,7 @@ class Tags(DnacBase):
             response = self.dnac._exec(
                 family="site_design",
                 function='get_sites',
-                op_modifies=True,
-                params={"name_hierarchy": site_name},
+                params={"name_hierarchy": site_name}
             )
 
             # Check if the response is empty
@@ -1557,10 +1555,8 @@ class Tags(DnacBase):
                 formatted_rule_descriptions.append(formatted_rule_description)
             
             # Sorting it so that its easier to compare.
-            formatted_rule_descriptions_list= self.sorting_rule_descriptions(formatted_rule_descriptions)
+            formatted_rule_descriptions= self.sorting_rule_descriptions(formatted_rule_descriptions)
             
-            # Converting the sorted list to tree structure.
-            formatted_rule_descriptions= self.group_rules_into_tree(formatted_rule_descriptions_list)
             formatted_port_rules["rules"]= formatted_rule_descriptions
 
         formatted_scope_description= []
@@ -1680,8 +1676,7 @@ class Tags(DnacBase):
             response = self.dnac._exec(
                 family="tag",
                 function='get_tag',
-                op_modifies=True,
-                params={"name": tag_name},
+                params={"name": tag_name}
             )
 
             # Check if the response is empty
@@ -1732,8 +1727,7 @@ class Tags(DnacBase):
             response = self.dnac._exec(
                 family="devices",
                 function='get_device_list',
-                op_modifies=True,
-                params=payload,
+                params=payload
             )
             # Check if the response is empty
             response = response.get("response")
@@ -1774,7 +1768,6 @@ class Tags(DnacBase):
             response = self.dnac._exec(
                 family="devices",
                 function="get_interface_details",
-                op_modifies=True,
                 params={"device_id": device_id, "name": port_name}
             )
 
@@ -1942,8 +1935,7 @@ class Tags(DnacBase):
                 response = self.dnac._exec(
                     family="site_design",
                     function='get_site_assigned_network_devices',
-                    op_modifies=True,
-                    params={"site_id": site_id, "offset" : offset, "limit" : limit},
+                    params={"site_id": site_id, "offset" : offset, "limit" : limit}
                 )
 
                 # Check if the response is empty
@@ -2060,8 +2052,7 @@ class Tags(DnacBase):
             response = self.dnac._exec(
                 family="devices",
                 function='get_device_list',
-                op_modifies=True,
-                params=payload,
+                params=payload
             )
             # Check if the response is empty
             response = response.get("response")
@@ -2723,7 +2714,7 @@ class Tags(DnacBase):
         """
 
         requires_update= False
-        ungrouped_rules = self.ungroup_rules_tree_into_list(rules) 
+        ungrouped_rules = rules # As new rules are already ungrouped
         ungrouped_rules_in_ccc = self.ungroup_rules_tree_into_list(rules_in_ccc) 
         state = self.params.get("state")
 
@@ -2742,7 +2733,7 @@ class Tags(DnacBase):
                 return requires_update, ungrouped_rules_in_ccc
             if ungrouped_rules_in_ccc is None: # Nothing to delete case
                 return requires_update, ungrouped_rules_in_ccc
-
+            
         requires_update, updated_rules = self.compare_and_update_list_of_dict(ungrouped_rules_in_ccc, ungrouped_rules)
 
         self.log("Comparing rules for state: '{0}'".format(state), "DEBUG")
@@ -2882,7 +2873,6 @@ class Tags(DnacBase):
             if device_rules_in_ccc is None:
                 return requires_update, device_rules_in_ccc
 
-
         #  Both are present case
         rules = device_rules.get("rules")
         rules_in_ccc = device_rules_in_ccc.get("rules")
@@ -2952,13 +2942,10 @@ class Tags(DnacBase):
         
         formatted_device_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_device_rules_in_ccc")
         formatted_port_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_port_rules_in_ccc")
-        
         updated_tag_info={}
         if tag_name != tag_name_in_ccc:
             requires_update = True
 
-        if description != description_in_ccc:
-            requires_update = True
 
         tmp_requires_update, updated_device_rules = self.compare_and_update_device_rules(formatted_device_rules, formatted_device_rules_in_ccc)
         requires_update = tmp_requires_update | requires_update
@@ -2976,9 +2963,18 @@ class Tags(DnacBase):
         updated_dynamic_rules= self.combine_device_port_rules(updated_device_rules, updated_port_rules)
 
         updated_tag_info={
-            "name": tag_name,
-            "description": description,
+            "name": tag_name
         }
+
+        if description_in_ccc:
+            if description != description_in_ccc:
+                requires_update = True
+                updated_tag_info["description"] = description_in_ccc
+            else:
+                updated_tag_info["description"] = description
+        else:
+            updated_tag_info["description"] = description
+
         if updated_dynamic_rules:
             updated_tag_info["dynamic_rules"] = updated_dynamic_rules
 
@@ -3056,7 +3052,6 @@ class Tags(DnacBase):
         return self
     
     def get_tag_members(self, tag, tag_id):
-
         """
         Args:
             tag (dict): The tag containing information about the tag.
@@ -3073,17 +3068,18 @@ class Tags(DnacBase):
         self.log("Starting retrieval of members assicoated with the tag:'{0}'".format(tag_name), "DEBUG")
         member_details=[]
         offset = 1
+        limit = 500
         while True:
             try:
                 response = self.dnac._exec(
                     family="tag",
                     function='get_tag_members_by_id',
-                    op_modifies=True,
+                    op_modifies = False,
                     params={
                         "id": tag_id,
                         "member_type": "networkdevice",
                         "offset": offset,
-                    },
+                    }
                 )
                 response = response.get("response")
                 self.log("Received API response from 'get_tag_members_by_id' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
@@ -3100,21 +3096,21 @@ class Tags(DnacBase):
                         "device_value": device_name,
                     }
                     member_details.append(device_detail_dict)
-
             except Exception as e:
                 self.msg = """Error while getting the details of Tag Members with given name '{0}' present in
                 Cisco Catalyst Center: {1}""".format(tag_name, str(e))
                 self.fail_and_exit(self.msg)
-            offset += 500
+            offset += limit
 
         #  For Interfaces
         offset = 1
+        limit = 500
         while True:
             try:
                 response = self.dnac._exec(
                     family="tag",
                     function='get_tag_members_by_id',
-                    op_modifies=True,
+                    op_modifies = False,
                     params={
                         "id": tag_id,
                         "member_type": "interface",
@@ -3144,7 +3140,7 @@ class Tags(DnacBase):
                 self.msg = """Error while getting the details of Tag Members with given name '{0}' present in
                 Cisco Catalyst Center: {1}""".format(tag_name, str(e))
                 self.fail_and_exit(self.msg)
-            offset += 500
+            offset += limit
         self.log("Extracted member details for the tag: '{0}' is :{1}".format(tag_name, member_details),"INFO")
         return member_details
 
@@ -3337,7 +3333,7 @@ class Tags(DnacBase):
             self.log("Starting Tag Deletion for the Tag '{0}'".format(tag_name), "DEBUG")
             tag_in_ccc= self.have.get("tag_info")
             if not tag_in_ccc:
-                self.log("Not able to delete Tag '{0}' as it is not present in Cisco Catalyst Center.".format(tag_name), "DEBUG")
+                self.log("Not able to perform delete operations. Tag '{0}' as it is not present in Cisco Catalyst Center.".format(tag_name), "DEBUG")
                 self.absent_tag.append(tag_name)
             else:
                 tag_id= tag_in_ccc.get("id")
@@ -3654,9 +3650,9 @@ class Tags(DnacBase):
 
         if self.absent_tag:
             if len(self.absent_tag) == 1:
-                absent_tag_msg = "Tag '{0}' can't be deleted. It is not present in the Cisco Catalyst Center.".format(self.absent_tag[0])
+                absent_tag_msg = "Not able to perform delete operations for Tag '{0}' because is not present in the Cisco Catalyst Center.".format(self.absent_tag[0])
             else:
-                absent_tag_msg = "Tags '{0}' can't be deleted. They are not present in the Cisco Catalyst Center.".format(", ".join(self.absent_tag))
+                absent_tag_msg = "Not able to perform delete operations for Tags '{0}' because they are not present in the Cisco Catalyst Center.".format(", ".join(self.absent_tag))
             result_msg_list.append(absent_tag_msg)
 
         for action, memberships in [
