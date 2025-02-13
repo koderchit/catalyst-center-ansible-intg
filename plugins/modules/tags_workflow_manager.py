@@ -11,9 +11,7 @@
 #  TODO: check for all the pass statements and remove where not needed.
 #  TODO: remove all the TODO statements as well.
 #  WHen port rule has speed, UI adds some zeroes in the value.
-
-# TESTCASE: WHEN RULE ACCEPTS INT BUT PASSING STRInG OR SOMETHING ELSE IN VALUE
-
+# UI SHOWS RANDOM BEHAVIOUR WHEN ALL 4 (Equals, ends, starts, contains) ARE GIVEN WITH SAME VALUE
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
     DnacBase
@@ -163,7 +161,6 @@ options:
                       dynamic rules associated with the tag and detaches the tag from all devices and ports.
                       # TODO: Check with pawan and update if necessary.
                     type: bool
-                    default: true
               rule_descriptions:
                 description: List of rules that define how ports will be tagged.
                 type: list
@@ -397,7 +394,7 @@ class Tags(DnacBase):
                         'type': 'dict',
                         'elements': 'dict',
                         'scope_category': {'type': 'str','required': True},
-                        'inherit': {'type': 'bool', 'default': True},
+                        'inherit': {'type': 'bool'},
                         'scope_members': {
                             'type': 'list',
                             'elements': 'str',
@@ -922,6 +919,14 @@ class Tags(DnacBase):
                 self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
 
             inherit = scope_description.get("inherit")
+
+            if not inherit:
+                if scope_category =="SITE":
+                    inherit = True
+                else:
+                    inherit = False
+                self.log("Inherit Not provided, Setting it to its default value: {0} for scope_category {1}.".format(inherit, scope_category), "INFO")
+
             scope_members= scope_description.get("scope_members")
 
             if not scope_members:
@@ -1306,6 +1311,7 @@ class Tags(DnacBase):
             "description": "description"
         }
         name =  name_selector.get(name)
+        
         if search_pattern== "equals":
             pass  #No change in value is required
         elif search_pattern== "contains":
@@ -1320,6 +1326,9 @@ class Tags(DnacBase):
             "name" : name,
             "value" : value
         }
+        # if formatted_rule["name"] == "speed":
+        #     formatted_rule["value"] = formatted_rule["value"] +"000"
+        # # Adding 3 zeroes to mimic UI behaviour
 
         self.log("Formatted rule representation for Input:{0} is Output:{1}".format(self.pprint(rule), self.pprint(formatted_rule)), "INFO")
         return formatted_rule
@@ -1449,12 +1458,10 @@ class Tags(DnacBase):
         formatted_rule_descriptions_list= self.sorting_rule_descriptions(formatted_rule_descriptions)
 
         self.log("Formatted Rule Descriptions In List Format:{0}".format(self.pprint(formatted_rule_descriptions_list)), "INFO")
-
-        grouped_device_rules= self.group_rules_into_tree(formatted_rule_descriptions_list)
         
         formatted_device_rules = {
             "memberType" : "networkdevice",
-            "rules": grouped_device_rules
+            "rules": formatted_rule_descriptions_list
         }
         self.log("Formatted Device rules for Input:{0} is Output:{1}".format(self.pprint(device_rules), self.pprint(formatted_device_rules)), "INFO")
         return formatted_device_rules
@@ -1506,11 +1513,11 @@ class Tags(DnacBase):
 
         formatted_scope_description={
             "memberType": "networkdevice",
-            "inherit": scope_description.get("inherit"),
             "groupType": scope_category,
-            "scopeObjectIds": scope_members_ids
+            "scopeObjectIds": scope_members_ids,
+            "inherit": scope_description.get("inherit")
         }
-
+        
         self.log("Formatted Scope Description for Input:{0} is Output:{1}".format(scope_description, formatted_scope_description), "INFO")
 
         return formatted_scope_description
@@ -1614,7 +1621,14 @@ class Tags(DnacBase):
         port_rules = tag.get("port_rules")
 
         formatted_device_rules = self.format_device_rules(device_rules)
+        if formatted_device_rules:
+            formatted_device_rules["rules"]= self.group_rules_into_tree(formatted_device_rules["rules"])
+
         formatted_port_rules = self.format_port_rules(port_rules)
+        if formatted_port_rules:
+            formatted_port_rules["rules"]= self.group_rules_into_tree(formatted_port_rules["rules"])
+
+
         if formatted_port_rules:
             rule_descriptions= port_rules.get("rule_descriptions")
             scope_description= port_rules.get("scope_description")
@@ -1846,10 +1860,28 @@ class Tags(DnacBase):
                         if device_id is None:
                             device_detail_dict["reason"] = "Device doesn't exist in Cisco Catalyst Center"
                             state= self.params.get("state")
-                            if state =="merged":
-                                self.not_updated_tag_memberships.append(device_detail_dict)
-                            elif state =="deleted":
-                                self.not_deleted_tag_memberships.append(device_detail_dict)
+
+                            if port_names:
+                                for port_name in port_names:
+                                    interface_detail_dict={
+                                                "device_type": "interface",
+                                                "device_identifier": param_name,
+                                                "device_value": param,
+                                                "interface_name": port_name,
+                                                "reason" : "Device doesn't exist in Cisco Catalyst Center"
+                                        }
+                                    # Tag not updated/deleted for interface
+                                    if state =="merged":
+                                        self.not_updated_tag_memberships.append(interface_detail_dict)
+                                    elif state =="deleted":
+                                        self.not_deleted_tag_memberships.append(interface_detail_dict)
+                            else:
+                                # Tag not updated/deleted for device
+                                if state =="merged":
+                                    self.not_updated_tag_memberships.append(device_detail_dict)
+                                elif state =="deleted":
+                                    self.not_deleted_tag_memberships.append(device_detail_dict)
+
                             self.log("No device found in Cisco Catalyst Center with {0}: {1}".format(param_name, param), "INFO")
                         else:
                             if port_names:
@@ -1897,38 +1929,44 @@ class Tags(DnacBase):
             This function fetches the device IDs for all devices assigned to a site identified by its name. If no devices are found, it logs the error.
         """
 
-        site_id= self.get_site_id(site_name)
-
         self.log("Initiating retrieval of device details under site: '{0}'.".format(site_name), "DEBUG")
 
-        try:
-            response = self.dnac._exec(
-                family="site_design",
-                function='get_site_assigned_network_devices',
-                op_modifies=True,
-                params={"site_id": site_id},
-            )
+        site_id= self.get_site_id(site_name)
+        device_id_list=[]
 
-            # Check if the response is empty
-            response = response.get("response")
-            self.log("Received API response from 'get_site_assigned_network_devices' for the site name: '{0}': {1}".format(site_name, str(response)), "DEBUG")
+        offset = 1
+        limit = 500
+        while True:
+            batch = offset//limit + 1
+            try:
+                response = self.dnac._exec(
+                    family="site_design",
+                    function='get_site_assigned_network_devices',
+                    op_modifies=True,
+                    params={"site_id": site_id, "offset" : offset, "limit" : limit},
+                )
 
-            if not response:
-                self.msg = "No devices found under the site name: {0}, Response empty.".format(site_name)
-                self.log(self.msg, "DEBUG")
-                return None
+                # Check if the response is empty
+                response = response.get("response")
+                self.log("Received API response from 'get_site_assigned_network_devices' for the site name: '{0}' for batch:{1}: {2}".format(site_name, batch , str(response)), "DEBUG")
+
+                if not response:
+                    self.msg = "No devices found under the site name: {0} for batch :{1}, Response empty.".format(site_name, batch)
+                    self.log(self.msg, "DEBUG")
+                    break
+                
+                for response_ele in response:
+                    device_id_list.append(response_ele.get("deviceId"))
+                
+            except Exception as e:
+                self.msg = """Error while getting the details of the devices under the site name '{0}' for batch {1} present in
+                Cisco Catalyst Center: {2}""".format(site_name, batch , str(e))
+                self.fail_and_exit(self.msg)
+
+            offset += limit
             
-            device_id_list=[]
-            for response_ele in response:
-                device_id_list.append(response_ele.get("deviceId"))
-            
-            return device_id_list
-
-        except Exception as e:
-            self.msg = """Error while getting the details of the devices under the site name '{0}' present in
-            Cisco Catalyst Center: {1}""".format(site_name, str(e))
-            self.fail_and_exit(self.msg)
-        
+        return device_id_list
+    
     def format_site_details(self, site_details):
         """
         Formats site details to retrieve device and interface information for each site.
@@ -2239,9 +2277,9 @@ class Tags(DnacBase):
 
 
         state= self.params.get("state")
-        self.log("Comparing lists for the state: '{0}'".format(state))
-        self.log("Existing List: {0}".format(existing_list))
-        self.log("New List: {0}".format(new_list))
+        self.log("Comparing lists for the state: '{0}'".format(state),"DEBUG")
+        self.log("Existing List: {0}".format(existing_list),"DEBUG")
+        self.log("New List: {0}".format(new_list),"DEBUG")
         
         existing_set = set(existing_list)
         new_set = set(new_list)
@@ -2258,8 +2296,8 @@ class Tags(DnacBase):
         
         needs_update = updated_list != existing_list
 
-        self.log("Updated List: {0}".format(updated_list))
-        self.log("Needs Update: {0}".format(needs_update))
+        self.log("Updated List: {0}".format(updated_list),"DEBUG")
+        self.log("Needs Update: {0}".format(needs_update),"DEBUG")
 
         return needs_update, updated_list
 
@@ -2605,6 +2643,7 @@ class Tags(DnacBase):
 
         state = self.params.get("state")
         if scope_category == scope_category_in_ccc:
+
             if inherit != inherit_in_ccc:
                 requires_update = True
 
@@ -2637,8 +2676,8 @@ class Tags(DnacBase):
             updated_scope_description["scopeObjectIds"] = scope_members
 
         updated_scope_description["memberType"] = "networkdevice"
-        self.log("Update required in scope description: {0}".format(requires_update))
-        self.log("Updated scope description: {0}".format(self.pprint(updated_scope_description)))
+        self.log("Update required in scope description: {0}".format(requires_update), "DEBUG")
+        self.log("Updated scope description: {0}".format(self.pprint(updated_scope_description)), "DEBUG")
 
         return requires_update, updated_scope_description
         
@@ -2668,7 +2707,6 @@ class Tags(DnacBase):
             # If no 'items', it's a leaf node
             leaf_nodes.append(rules)
         
-        self.log("Ungrouped rules for Input:{0} is Output:{1}".format(rules, leaf_nodes), "DEBUG")
         return leaf_nodes
 
     def compare_and_update_rules(self, rules, rules_in_ccc):
@@ -2707,7 +2745,6 @@ class Tags(DnacBase):
 
         requires_update, updated_rules = self.compare_and_update_list_of_dict(ungrouped_rules_in_ccc, ungrouped_rules)
 
-        updated_rules = self.group_rules_into_tree(updated_rules)
         self.log("Comparing rules for state: '{0}'".format(state), "DEBUG")
         self.log("new rules:{0} and existing rules:{1}".format(self.pprint(rules), self.pprint(rules_in_ccc)), "DEBUG")
         self.log("Requires update:{0}, updated rules:{1}".format(requires_update, self.pprint(updated_rules)), "DEBUG")
@@ -2891,7 +2928,6 @@ class Tags(DnacBase):
         formatted_device_rules = self.format_device_rules(device_rules)
         formatted_port_rules = self.format_port_rules(port_rules)
 
-
         tag_name_in_ccc= tag_in_ccc.get("name")
         description_in_ccc= tag_in_ccc.get("description")
         dynamic_rules_in_ccc = tag_in_ccc.get("dynamicRules",[])
@@ -2916,7 +2952,7 @@ class Tags(DnacBase):
         
         formatted_device_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_device_rules_in_ccc")
         formatted_port_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_port_rules_in_ccc")
-
+        
         updated_tag_info={}
         if tag_name != tag_name_in_ccc:
             requires_update = True
@@ -2929,6 +2965,13 @@ class Tags(DnacBase):
 
         tmp_requires_update, updated_port_rules = self.compare_and_update_port_rules(formatted_port_rules, formatted_port_rules_in_ccc)
         requires_update = tmp_requires_update | requires_update
+
+        if updated_device_rules:
+            updated_device_rules["rules"]= self.group_rules_into_tree(updated_device_rules["rules"])
+        
+        if updated_port_rules:
+            updated_port_rules["rules"]= self.group_rules_into_tree(updated_port_rules["rules"])
+
 
         updated_dynamic_rules= self.combine_device_port_rules(updated_device_rules, updated_port_rules)
 
@@ -3144,7 +3187,7 @@ class Tags(DnacBase):
             for network_device_detail in network_device_details:
 
                 device_id = network_device_detail.get("id")
-                network_device_detail["tags"] = new_tags_details
+                network_device_detail["tags_list"] = new_tags_details
                 
                 needs_update, updated_tags = self.compare_and_update_list_of_dict(fetched_tags_details.get(device_id), new_tags_details)
                 if needs_update:
@@ -3184,7 +3227,7 @@ class Tags(DnacBase):
             payload=[]
             for interface_detail in interface_details:
                 device_id = interface_detail.get("id")
-                interface_detail["tags"] = new_tags_details
+                interface_detail["tags_list"] = new_tags_details
 
                 needs_update, updated_tags = self.compare_and_update_list_of_dict(fetched_tags_details.get(device_id), new_tags_details)
                 if needs_update:
@@ -3236,15 +3279,15 @@ class Tags(DnacBase):
             tag_in_ccc= self.have.get("tag_info")
             
             if not tag_in_ccc:
-                self.log("Starting the process of creating {0} Tag with config: {1}".format(tag_name, tag), "DEBUG")
+                self.log("Starting the process of creating {0} Tag with config: {1}".format(tag_name, self.pprint(tag)), "DEBUG")
                 self.create_tag(tag).check_return_status()
                 self.created_tag.append(tag_name)
             else:
-                self.log("Tag: {0} is already present in Cisco Catalyst Center with details: {1}".format(tag_name, tag_in_ccc), "DEBUG")
+                self.log("Tag: {0} is already present in Cisco Catalyst Center with details: {1}".format(tag_name, self.pprint(tag_in_ccc)), "DEBUG")
                 requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
 
                 if requires_update:
-                    self.log("Updating the tag: {0} with config: {1}".format(tag_name, self.pprint(tag)), "DEBUG")
+                    self.log("Updating the tag: {0} with config: {1}".format(tag_name, self.pprint(updated_tag_info)), "DEBUG")
                     self.update_tag(tag = updated_tag_info, tag_id= tag_in_ccc.get("id"))
                     self.updated_tag.append(tag_name)
                 else:
@@ -3550,7 +3593,6 @@ class Tags(DnacBase):
 
         if site_name:
             base_msg += " under site:{0}".format(site_name)
-
         tag_names = ", ".join(tag.get("tag_name", "Unknown") for tag in tags_list) if tags_list else "any tags"
 
         if action == "updated":
@@ -3583,23 +3625,38 @@ class Tags(DnacBase):
         result_msg_list = []
 
         if self.created_tag:
-            created_tag_msg = "Tag '{0}' has been created successfully in the Cisco Catalyst Center.".format(self.created_tag[0])
+            if len(self.created_tag) == 1:
+                created_tag_msg = "Tag '{0}' has been created successfully in the Cisco Catalyst Center.".format(self.created_tag[0])
+            else:
+                created_tag_msg = "Tags '{0}' have been created successfully in the Cisco Catalyst Center.".format(", ".join(self.created_tag))
             result_msg_list.append(created_tag_msg)
 
         if self.updated_tag:
-            updated_tag_msg = "Tag '{0}' has been updated successfully in the Cisco Catalyst Center.".format(self.updated_tag[0])
+            if len(self.updated_tag) == 1:
+                updated_tag_msg = "Tag '{0}' has been updated successfully in the Cisco Catalyst Center.".format(self.updated_tag[0])
+            else:
+                updated_tag_msg = "Tags '{0}' have been updated successfully in the Cisco Catalyst Center.".format(", ".join(self.updated_tag))
             result_msg_list.append(updated_tag_msg)
 
         if self.not_updated_tag:
-            not_updated_tag_msg = "Tag '{0}' needs no update in the Cisco Catalyst Center.".format(self.not_updated_tag[0])
+            if len(self.not_updated_tag) == 1:
+                not_updated_tag_msg = "Tag '{0}' needs no update in the Cisco Catalyst Center.".format(self.not_updated_tag[0])
+            else:
+                not_updated_tag_msg = "Tags '{0}' needs no update in the Cisco Catalyst Center.".format(", ".join(self.not_updated_tag))
             result_msg_list.append(not_updated_tag_msg)
 
         if self.deleted_tag:
-            deleted_tag_msg = "Tag '{0}' has been deleted successfully in the Cisco Catalyst Center.".format(self.deleted_tag[0])
+            if len(self.deleted_tag) == 1:
+                deleted_tag_msg = "Tag '{0}' has been deleted successfully in the Cisco Catalyst Center.".format(self.deleted_tag[0])
+            else:
+                deleted_tag_msg = "Tags '{0}' have been deleted successfully in the Cisco Catalyst Center.".format(", ".join(self.deleted_tag))
             result_msg_list.append(deleted_tag_msg)
 
         if self.absent_tag:
-            absent_tag_msg = "Tag '{0}' can't be deleted. It is not present in the Cisco Catalyst Center.".format(self.absent_tag[0])
+            if len(self.absent_tag) == 1:
+                absent_tag_msg = "Tag '{0}' can't be deleted. It is not present in the Cisco Catalyst Center.".format(self.absent_tag[0])
+            else:
+                absent_tag_msg = "Tags '{0}' can't be deleted. They are not present in the Cisco Catalyst Center.".format(", ".join(self.absent_tag))
             result_msg_list.append(absent_tag_msg)
 
         for action, memberships in [
