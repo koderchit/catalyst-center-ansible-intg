@@ -8,7 +8,6 @@
 #  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
 #  TODO: add proper logs to each function.
 #  TODO: Check all the logs and remove unnecessary logs
-#  TODO: check for all the pass statements and remove where not needed.
 #  TODO: remove all the TODO statements as well.
 #  WHen port rule has speed, UI adds some zeroes in the value.
 # UI SHOWS RANDOM BEHAVIOUR WHEN ALL 4 (Equals, ends, starts, contains) ARE GIVEN WITH SAME VALUE
@@ -276,8 +275,510 @@ notes:
 """
 
 EXAMPLES = r"""
+# For creating/updating a tag
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Create a tag with description.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag:  
+              name: ServersTag 
+              description: "Tag for devices and interfaces connected to servers "
+
+              
+# For creating/updating a tag with device rules.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Create a tag with device rules .
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              description: Tag for Border devices of 9300 Family.
+              device_rules:
+                rule_descriptions:
+                  - rule_name: device_name  
+                    search_pattern: contains 
+                    value: Border          
+                    operation: ILIKE       
+                  - rule_name: device_family  
+                    search_pattern: ends_with 
+                    value: 9300
+                    operation: ILIKE
+
+    
+# For creating/updating a tag with port rules.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Create a tag with port rules .
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              description: Tag for interfaces connected to servers 
+              port_rules:
+                scope_description: 
+                  scope_category: TAG 
+                  scope_members: 
+                    - NY_SERVER_TAG
+                    - SJC_SERVER_TAG
+                rule_descriptions:
+                  - rule_name: speed         
+                    search_pattern: equals 
+                    value: "10000"          
+                    operation: ILIKE         
+                  - rule_name: port_name  
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE 
+          
+
+# For updating the scope description of a tag with port rules: 
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Update scope description in a tag with port rules.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              description: Tag for devices and interfaces connected to servers 
+              port_rules:
+                scope_description: 
+                  scope_category: SITE 
+                  scope_members: 
+                    - Global/USA
+                    - Global/INDIA
 
 
+
+# For updating rule descriptions of a tag with port rules: 
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Update rule descriptions in a tag with port rules.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              description: Tag for devices and interfaces connected to servers 
+              port_rules:
+                rule_descriptions:
+                  - rule_name: speed         
+                    search_pattern: contains 
+                    value: "100000"          
+                    operation: ILIKE         
+                  - rule_name: port_name  
+                    search_pattern: equals 
+                    value: tengig/1/0/1
+                    operation: ILIKE 
+
+
+# # To assign tags to devices/ports (Remove port_names list to assign tags to devices.)
+
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Assign tags to members(devices/ports).
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag_memberships:
+              tags:  
+                - ServersTag1
+                - ServersTag2
+              device_details: 
+                - ip_addresses: 
+                    - 10.197.156.97
+                    - 10.197.156.98
+                    - 10.197.156.99
+                  hostnames: 
+                    - SJC_Border1 
+                    - SJC_Border2
+                    - NY_Border1
+                  mac_addresses: 
+                    - e4:38:7e:42:bc:00
+                    - 6c:d6:e3:75:5a:e0
+                    - 34:5d:a8:3b:d8:e0
+                  serial_numbers: 
+                    - SAD055006NE
+                    - SAD04350EEU
+                    - SAD055108C2
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2  
+                    
+
+#  To assign tags to devices/ports under specific sites (Remove port_names to assign tags to devices.)
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Adding members to tag within a specific site.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: merged
+        config_verify: false
+        config:
+          - tag_memberships:
+              tags:  
+                - ServersTag1 
+                - ServersTag2
+              site_details: 
+                - site_names: 
+                    - Global/INDIA
+                  port_names: 
+                    - FortyGigabitEthernet1/1/1
+                    - FortyGigabitEthernet1/1/2
+
+                    
+# Deleting a tag.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Delete a Tag.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag
+
+
+# Force Deleting a tag.
+# It will remove all the dynamic and static members from the tag and delete the tag.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Force delete a Tag.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag1 
+              force_delete: true 
+
+# For deleting rule descriptions of a tag with device rules.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Delete rule description of a tag with device rules
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              device_rules:
+                rule_descriptions:
+                  - rule_name: device_family
+                    search_pattern: ends_with 
+                    value: 9300        
+                    operation: ILIKE   
+
+
+            
+# For deleting scope members of a tag with port rules.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Delete scope members of a tag with port rules
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              description: Tag for devices and interfaces connected to servers 
+              port_rules:
+                scope_description: 
+                  scope_category: SITE 
+                  scope_members: 
+                    - Global/INDIA
+
+                    
+# For deleting rule descriptions of a tag with port rules.
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Delete rule descriptions of a tag with port rules
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: false
+        config:
+          - tag: 
+              name: ServersTag 
+              description: Tag for devices and interfaces connected to servers 
+              port_rules:
+                rule_descriptions:
+                  - rule_name: speed         
+                    search_pattern: equals 
+                    value: "10000"          
+                    operation: ILIKE         
+                  - rule_name: port_name  
+                    search_pattern: contains 
+                    value: tengig/1/0/1
+                    operation: ILIKE 
+
+
+# For Deleting tags from devices/ports (Remove port_names to delete tags from devices)
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Delete tags from members.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: false
+        config:
+          - tag_memberships: 
+              tags:  
+                - ServersTag1
+                - ServersTag2
+              device_details: 
+                - ip_addresses: 
+                    - 10.197.156.97
+                    - 10.197.156.98
+                  hostnames: 
+                    - SJC_Border1 
+                    - NY_Border1
+                  mac_addresses: 
+                    - e4:38:7e:42:bc:00
+                    - 6c:d6:e3:75:5a:e0
+                  serial_numbers: 
+                    - SAD055006NE
+                    - SAD04350EEU
+                  port_names: 
+                    - TenGigabitEthernet1/0/1
+                    - TenGigabitEthernet1/0/2
+
+#  For deleting tags from devices/ports under specific sites (Remove port_names to delete tags from devices)
+- hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Delete tags from members within a specific sites.
+      cisco.dnac.tags_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        dnac_log_append: true
+        dnac_log_file_path: "{{ dnac_log_file_path }}"
+        state: deleted
+        config_verify: true
+        config:
+          - tag_memberships:
+              tags:  
+                - ServersTag1 
+                - ServersTag2
+              site_details: 
+                - site_names: 
+                    - Global/INDIA
+                  port_names: 
+                    - TenGigabitEthernet1/0/1
+                    - TenGigabitEthernet1/0/2
 
 """
 
@@ -1196,13 +1697,13 @@ class Tags(DnacBase):
                             "Port names is provided under devide details."
                             "Tag membership operation applies to interfaces"
                         )
-                        self.log(self.msg)
+                        self.log(self.msg, "DEBUG")
                     else:
                         self.msg=(
                             "Port names is not provided under devide details."
                             "Tag membership operation applies to network devices"
                         )
-                        self.log(self.msg)
+                        self.log(self.msg, "DEBUG")
 
             if not site_details:
                 self.log("Site details are not provided in tag memberships config", "DEBUG")
@@ -1220,13 +1721,13 @@ class Tags(DnacBase):
                             "Port names is provided under site details."
                             "Tag membership operation applies to interfaces"
                         )
-                        self.log(self.msg)
+                        self.log(self.msg, "DEBUG")
                     else:
                         self.msg=(
                             "Port names is not provided under site details."
                             "Tag membership operation applies to network devices"
                         )
-                        self.log(self.msg)
+                        self.log(self.msg, "DEBUG")
 
             want["tag_memberships"]= tag_memberships
             self.msg = (
@@ -1491,7 +1992,7 @@ class Tags(DnacBase):
                 tag_id= self.get_tag_id(tag)
                 if tag_id is None:
                     self.msg= (
-                        "Scope Member provided: {0} is Not present in Cisco Catalyst Center."
+                        "Scope Member provided: {0} is Not present in Cisco Catalyst Center. "
                         "Please ensure that the scope_members are present and scope_category is provided are valid"
                     ).format(tag)
                     self.log(self.msg, "INFO")
@@ -1502,7 +2003,7 @@ class Tags(DnacBase):
                 site_id= self.get_site_id(site)
                 if site_id is None:
                     self.msg= (
-                        "Scope Member provided: {0} is Not present in Cisco Catalyst Center."
+                        "Scope Member provided: {0} is Not present in Cisco Catalyst Center. "
                         "Please ensure that the scope_members are present and scope_category provided are valid"
                     ).format(site)
                     self.log(self.msg, "INFO")
@@ -1984,7 +2485,7 @@ class Tags(DnacBase):
                     site_id= self.get_site_id(site)
                     if site_id is None:
                         self.msg= (
-                            "Site provided: {0} is Not present in Cisco Catalyst Center."
+                            "Site provided: {0} is Not present in Cisco Catalyst Center. "
                             "Please ensure that the Site name hierarchy provided is valid"
                         ).format(site)
                         self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
@@ -2013,7 +2514,11 @@ class Tags(DnacBase):
                                     port_id= self.get_port_id_by_device_id(device_id, port_name, "hostname", device_name)
                                     if port_id is None:
                                         interface_detail_dict["reason"]=" Interface Not Available on Device"
-                                        self.not_updated_tag_memberships.append(interface_detail_dict)
+                                        state= self.params.get("state")
+                                        if state =="merged":
+                                            self.not_updated_tag_memberships.append(interface_detail_dict)
+                                        elif state =="deleted":
+                                            self.not_deleted_tag_memberships.append(interface_detail_dict)
                                         self.log("Interface: '{0}' is not available for the device with {1}:'{2}'.".format(port_name, "hostname", device_name), "INFO")
                                     else:
                                         interface_detail_dict["id"] = port_id
@@ -2382,10 +2887,10 @@ class Tags(DnacBase):
             # Delete elements in new_list from existing_list while preserving order
             updated_list = [d for d in existing_list if d not in new_list]
 
-        self.log("Updated List: {0}".format(self.pprint(updated_list)), "DEBUG")
         # Check if there's a difference
         needs_update = updated_list != existing_list
         self.log("Needs Update: {0}".format(needs_update), "DEBUG")
+        self.log("Updated List: {0}".format(self.pprint(updated_list)), "DEBUG")
 
         return needs_update, updated_list
 
@@ -2591,10 +3096,10 @@ class Tags(DnacBase):
                     payload.append(current_interface_payload)
                 else:
                     if state =="merged":
-                        interface_detail["reason"] = "Interface is already Tagged with the given tags. Nothing to update." 
+                        interface_detail["reason"] = "Interface is already Tagged to the given tags. Nothing to update." 
                         self.not_updated_tag_memberships.append(interface_detail)
                     elif state =="deleted":
-                        interface_detail["reason"] = "Interface is not tagged with given tags. Nothing to delete." 
+                        interface_detail["reason"] = "Interface is not tagged to given tags. Nothing to delete." 
                         self.not_deleted_tag_memberships.append(interface_detail)
             if payload:
                 self.update_tags_associated_with_the_interfaces(payload)
@@ -2714,31 +3219,25 @@ class Tags(DnacBase):
         """
 
         requires_update= False
-        ungrouped_rules = rules # As new rules are already ungrouped
-        ungrouped_rules_in_ccc = self.ungroup_rules_tree_into_list(rules_in_ccc) 
         state = self.params.get("state")
 
         if state =="merged":
-            if ungrouped_rules is None and ungrouped_rules_in_ccc is None:
+            if rules is None and rules_in_ccc is None:
                 return requires_update, None
-            if ungrouped_rules is None: # Nothing to update case
-                return requires_update, ungrouped_rules_in_ccc
-            if ungrouped_rules_in_ccc is None: # Updating it with the new rules
+            if rules is None: # Nothing to update case
+                return requires_update, rules_in_ccc
+            if rules_in_ccc is None: # Updating it with the new rules
                 requires_update= True
-                return requires_update, ungrouped_rules
+                return requires_update, rules
         if state =="deleted":
-            if ungrouped_rules is None and ungrouped_rules_in_ccc is None:
+            if rules is None and rules_in_ccc is None:
                 return requires_update, None
-            if ungrouped_rules is None: # Nothing to delete case
-                return requires_update, ungrouped_rules_in_ccc
-            if ungrouped_rules_in_ccc is None: # Nothing to delete case
-                return requires_update, ungrouped_rules_in_ccc
+            if rules is None: # Nothing to delete case
+                return requires_update, rules_in_ccc
+            if rules_in_ccc is None: # Nothing to delete case
+                return requires_update, rules_in_ccc
             
-        requires_update, updated_rules = self.compare_and_update_list_of_dict(ungrouped_rules_in_ccc, ungrouped_rules)
-
-        self.log("Comparing rules for state: '{0}'".format(state), "DEBUG")
-        self.log("new rules:{0} and existing rules:{1}".format(self.pprint(rules), self.pprint(rules_in_ccc)), "DEBUG")
-        self.log("Requires update:{0}, updated rules:{1}".format(requires_update, self.pprint(updated_rules)), "DEBUG")
+        requires_update, updated_rules = self.compare_and_update_list_of_dict(rules_in_ccc, rules)
 
         return requires_update, updated_rules
 
@@ -2810,9 +3309,14 @@ class Tags(DnacBase):
         if not updated_scope_description and not updated_rules:
             return requires_update, updated_port_rules 
         if not updated_scope_description or not updated_rules:
-            self.msg= """On deletion, Either scope_description:{0} or rule_descriptions:{1} for port_rules are getting completed empty.
-            Atleast one parameter must be left in both to proceed with the deletion""".format(updated_scope_description, updated_rules)
-            self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            if not updated_scope_description:
+                self.msg= ("On deletion, the scope description for port rules {0} is being cleared entirely. "
+                "Atleast one scope member must be left after deletion to proceed with the deletion in Cisco Catalyst Center").format(updated_scope_description)
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
+            else:
+                self.msg= ("On deletion, the rule descriptions for port rules {0} is being cleared entirely. "
+                "Atleast one rule must be left after deletion to proceed with the deletion in Cisco Catalyst Center").format(updated_rules)
+                self.set_operation_result("failed", False, self.msg, "ERROR").check_return_status()
         
         updated_port_rules={
             "memberType" : "interface",
@@ -2928,24 +3432,26 @@ class Tags(DnacBase):
             if member_type_in_ccc == "interface":
                 scope_description_in_ccc = dynamic_rule_in_ccc.get("scopeRule")
                 rules_in_ccc = dynamic_rule_in_ccc.get("rules")
+                ungrouped_rules_in_ccc = self.ungroup_rules_tree_into_list(rules_in_ccc)
                 dynamic_rule_dict_in_ccc["formatted_port_rules_in_ccc"] = {
                     "memberType" : member_type_in_ccc,
-                    "rules": rules_in_ccc,
+                    "rules": ungrouped_rules_in_ccc,
                     "scopeRule" : scope_description_in_ccc
                 }
             elif member_type_in_ccc == "networkdevice":
                 rules_in_ccc = dynamic_rule_in_ccc.get("rules")
+                ungrouped_rules_in_ccc = self.ungroup_rules_tree_into_list(rules_in_ccc)
                 dynamic_rule_dict_in_ccc["formatted_device_rules_in_ccc"] = {
                     "memberType" : member_type_in_ccc,
-                    "rules": rules_in_ccc,
+                    "rules": ungrouped_rules_in_ccc,
                 }
         
+        # These are extracted from CCC so they are already formatted. 
         formatted_device_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_device_rules_in_ccc")
         formatted_port_rules_in_ccc = dynamic_rule_dict_in_ccc.get("formatted_port_rules_in_ccc")
         updated_tag_info={}
         if tag_name != tag_name_in_ccc:
             requires_update = True
-
 
         tmp_requires_update, updated_device_rules = self.compare_and_update_device_rules(formatted_device_rules, formatted_device_rules_in_ccc)
         requires_update = tmp_requires_update | requires_update
@@ -2959,24 +3465,29 @@ class Tags(DnacBase):
         if updated_port_rules:
             updated_port_rules["rules"]= self.group_rules_into_tree(updated_port_rules["rules"])
 
-
         updated_dynamic_rules= self.combine_device_port_rules(updated_device_rules, updated_port_rules)
 
         updated_tag_info={
             "name": tag_name
         }
 
-        if description_in_ccc:
+        if description_in_ccc is not None and description is not None:
             if description != description_in_ccc:
                 requires_update = True
-                updated_tag_info["description"] = description_in_ccc
-            else:
                 updated_tag_info["description"] = description
+            else:
+                updated_tag_info["description"] = description_in_ccc
+        elif description_in_ccc is not None and description is None:
+            updated_tag_info["description"] = description_in_ccc
+        elif description_in_ccc is None and description is not None:
+            requires_update = True
+            updated_tag_info["dynamic_rules"] = description
         else:
-            updated_tag_info["description"] = description
+            updated_tag_info["dynamic_rules"] = description_in_ccc
 
         if updated_dynamic_rules:
             updated_tag_info["dynamic_rules"] = updated_dynamic_rules
+            
 
         state = self.params.get("state")
         self.log("Comparing tag info for state: '{0}'".format(state), "DEBUG")
@@ -3666,12 +4177,12 @@ class Tags(DnacBase):
                     message = self.generate_tagging_message(action, membership)
                     if message:
                         result_msg_list.append(message)
-        
+
         if self.created_tag or self.updated_tag or self.deleted_tag or self.updated_tag_memberships or self.deleted_tag_memberships:
             self.result["changed"] = True
 
         self.msg = ("\n").join(result_msg_list)
-        self.set_operation_result("success", self.result["changed"], self.msg, "INFO").check_return_status()
+        self.set_operation_result("success", self.result["changed"], self.msg, "INFO")
 
         return self
 
