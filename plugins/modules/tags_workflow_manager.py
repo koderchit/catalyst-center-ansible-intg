@@ -1811,23 +1811,32 @@ class Tags(DnacBase):
         }
         name =  name_selector.get(name)
         
-        if search_pattern== "equals":
-            pass  #No change in value is required
-        elif search_pattern== "contains":
-            value= "%"+value+"%"
-        elif search_pattern == "starts_with":
-            value= value + "%"
-        elif search_pattern =="ends_with":
-            value= "%" + value
+
+        if formatted_rule["name"] == "speed":
+            # Adding 3 zeroes for Unit conversion to mimic UI behaviour(API expects speed in kbps and UI shows mbps value)
+            if search_pattern== "equals":
+                value = value + "000"
+            elif search_pattern== "contains":
+                value= "%" + value + "%" + "000" +"%"
+            elif search_pattern == "starts_with":
+                value= value + "000" + "%"
+            elif search_pattern =="ends_with":
+                value= "%" + value + "000"
+        else:
+            if search_pattern== "equals":
+                pass  #No change in value is required
+            elif search_pattern== "contains":
+                value= "%"+value+"%"
+            elif search_pattern == "starts_with":
+                value= value + "%"
+            elif search_pattern =="ends_with":
+                value= "%" + value
         
         formatted_rule = {
             "operation" : operation,
             "name" : name,
             "value" : value
         }
-        # if formatted_rule["name"] == "speed":
-        #     formatted_rule["value"] = formatted_rule["value"] +"000"
-        # # Adding 3 zeroes to mimic UI behaviour
 
         self.log("Formatted rule representation for Input:{0} is Output:{1}".format(self.pprint(rule), self.pprint(formatted_rule)), "INFO")
         return formatted_rule
