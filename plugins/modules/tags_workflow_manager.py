@@ -1812,7 +1812,7 @@ class Tags(DnacBase):
         name =  name_selector.get(name)
         
 
-        if formatted_rule["name"] == "speed":
+        if name == "speed":
             # Adding 3 zeroes for Unit conversion to mimic UI behaviour(API expects speed in kbps and UI shows mbps value)
             if search_pattern== "equals":
                 value = value + "000"
@@ -2805,62 +2805,6 @@ class Tags(DnacBase):
         self.log("Needs Update: {0}".format(needs_update),"DEBUG")
 
         return needs_update, updated_list
-
-    def unformat_rule_representation(self, formatted_rule):
-        """
-        Args:
-            formatted_rule (dict): A dictionary containing the formatted rule with keys 'operation', 'name', and 'value'.
-
-        Returns:
-            dict: An unformatted rule represented by a dictionary with keys 'search_pattern', 'operation', 'value', and 'rule_name'.
-        
-        Description:
-            Converts a formatted rule (with specific name mappings and value patterns) to an unformatted representation
-            by reversing name mappings and detecting the search pattern (contains, starts_with, ends_with, equals).
-        """
-        operation = formatted_rule.get("operation")
-        name = formatted_rule.get("name")
-        value = formatted_rule.get("value")
-
-        # Reverse lookup for name_selector mapping
-        name_selector_reverse = {
-            "hostname": "device_name",
-            "family": "device_family",
-            "series": "device_series",
-            "managementIpAddress": "ip_address",
-            "groupNameHierarchy": "location",
-            "softwareVersion": "version",
-            "speed": "speed",
-            "adminStatus": "admin_status",
-            "portName": "port_name",
-            "status": "operational_status",
-            "description": "description"
-        }
-
-        rule_name = name_selector_reverse.get(name, name)
-
-        # Detect search_pattern based on value transformation
-        if value.startswith("%") and value.endswith("%"):
-            search_pattern = "contains"
-            value = value[1:-1]  # Remove %
-        elif value.startswith("%"):
-            search_pattern = "ends_with"
-            value = value[1:]  # Remove leading %
-        elif value.endswith("%"):
-            search_pattern = "starts_with"
-            value = value[:-1]  # Remove trailing %
-        else:
-            search_pattern = "equals"
-
-        unformatted_rule = {
-            "search_pattern": search_pattern,
-            "operation": operation,
-            "value": value,
-            "rule_name": rule_name
-        }
-
-        self.log("Unformatted rule representation for Input:{0} is Output:{1}".format(formatted_rule, unformatted_rule), "INFO")
-        return unformatted_rule
 
     def compare_and_update_list_of_dict(self, existing_list, new_list):
         """
