@@ -6,11 +6,6 @@
 
 
 #  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
-#  TODO: add proper logs to each function.
-#  TODO: Check all the logs and remove unnecessary logs
-#  TODO: remove all the TODO statements as well.
-#  WHen port rule has speed, UI adds some zeroes in the value.
-# UI SHOWS RANDOM BEHAVIOUR WHEN ALL 4 (Equals, ends, starts, contains) ARE GIVEN WITH SAME VALUE
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
     DnacBase
@@ -155,10 +150,11 @@ options:
                     required: true
                   inherit:
                     description: >
-                      A boolean flag that specifies whether the site should inherit its children.
-                      It is typically used when the scope_category is SITE. When enabled, it removes all existing 
-                      dynamic rules associated with the tag and detaches the tag from all devices and ports.
-                      # TODO: Check with pawan and update if necessary.
+                      A boolean flag that defines whether the selected site should inherit devices 
+                      from its child sites within the given scope.  
+                      This is typically used when scope_category is set to SITE. 
+                      The default value is true when scope_category is SITE 
+                      and false when scope_category is TAG.
                     type: bool
               rule_descriptions:
                 description: List of rules that define how ports will be tagged.
@@ -797,7 +793,6 @@ dnac_response:
       "version": "string"
     }
 """
-
 
 class Tags(DnacBase):
     """Class containing member attributes for tags workflow manager module"""
@@ -4197,15 +4192,6 @@ def main():
     ccc_tags.update_tags_profile_messages().check_return_status()
 
     module.exit_json(**ccc_tags.result)
-
-
-# Tasks:
-#  Write all the playbooks and add in examples and complete the documentation. Then start testing
-# 2) ADD PROPER LOGS AND TEST THE ENTIRE WORKFLOW READING ALL THE LOGS, ALSO CHECK ALL THE LOGS.
-# 3) Documentation:
-# 4) SwFS doc
-# 5) Proper Logging, code refactoring.
-# 6) TESTING
 
 
 if __name__ == '__main__':
