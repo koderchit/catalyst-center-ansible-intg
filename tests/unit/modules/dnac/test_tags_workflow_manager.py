@@ -24,12 +24,13 @@ class TestDnacTagsWorkflow(TestDnacModule):
 
     module = tags_workflow_manager
     test_data = loadPlaybookData("tags_workflow_manager")
-    
+
     playbook_config_create_a_tag_with_device_port_rules_case_1 = test_data.get("create_a_tag_with_device_port_rules_case_1")
     playbook_config_delete_a_tag_with_device_port_rules_case_2 = test_data.get("delete_a_tag_with_device_port_rules_case_2")
     playbook_config_force_delete_a_tag_with_device_port_rules_case_3 = test_data.get("force_delete_a_tag_with_device_port_rules_case_3")
     playbook_config_update_scope_of_a_tag_with_only_port_rule = test_data.get("update_scope_of_a_tag_with_only_port_rule")
     playbook_config_update_scope_members_of_tag_with_device_ports_rules = test_data.get("update_scope_members_of_tag_with_device_ports_rules")
+
 
     def setUp(self):
         super(TestDnacTagsWorkflow, self).setUp()
@@ -57,7 +58,6 @@ class TestDnacTagsWorkflow(TestDnacModule):
             self.run_dnac_exec.side_effect = [
                 # self.test_data.get(""),
             ]
-
         elif "test_create_a_tag_with_device_port_rules_case_1" in self._testMethodName:
             self.run_dnac_exec.side_effect = [
                 self.test_data.get("get_tag_case_1_call_1"),
@@ -220,123 +220,3 @@ class TestDnacTagsWorkflow(TestDnacModule):
             result.get('msg'),
             "Tag 'ServersTag' has been updated successfully in the Cisco Catalyst Center."
         )
-
-
-    # def test_Site_workflow_manager_create_site(self):
-    #     """
-    #     Test case for site workflow manager when creating a site.
-
-    #     This test case checks the behavior of the site workflow manager when creating a new site in the specified DNAC.
-    #     """
-    #     set_module_args(
-    #         dict(
-    #             dnac_host="1.1.1.1",
-    #             dnac_username="dummy",
-    #             dnac_password="dummy",
-    #             dnac_version="2.3.5.3",
-    #             dnac_log=True,
-    #             state="merged",
-    #             config=self.playbook_config_site
-    #         )
-    #     )
-    #     result = self.execute_module(changed=True, failed=False)
-    #     self.assertEqual(
-    #         result.get('msg'),
-    #         "Site(s) '['Global/japan8888', 'Global/japan8888/blossom', 'Global/japan8888/blossom/cherry']' created successfully in Cisco Catalyst Center."
-    #     )
-
-    # def test_Site_workflow_manager_upload_floor_map(self):
-    #     """
-    #     Test case for site workflow manager when creating a site.
-
-    #     This test case checks the behavior of the site workflow manager when creating a new site in the specified DNAC.
-    #     """
-    #     set_module_args(
-    #         dict(
-    #             dnac_host="1.1.1.1",
-    #             dnac_username="dummy",
-    #             dnac_password="dummy",
-    #             dnac_version="2.3.7.6",
-    #             dnac_log=True,
-    #             state="merged",
-    #             config=self.upload_floor_map_playbook
-    #         )
-    #     )
-    #     result = self.execute_module(changed=True, failed=False)
-    #     self.assertEqual(
-    #         result.get('msg'),
-    #         "Site(s) '[['japan151', 'Abc2', 'blossom', 'cherry']]' created successfully in Cisco Catalyst Center."
-    #     )
-
-    # def test_site_workflow_manager_invalid_param(self):
-
-    #     """
-    #     Test case for site workflow manager with invalid parameters in the playbook.
-
-    #     This test case checks the behavior of the site workflow manager when the playbook contains invalid parameters.
-    #     """
-
-    #     set_module_args(
-    #         dict(
-    #             dnac_host="1.1.1.1",
-    #             dnac_username="dummy",
-    #             dnac_password="dummy",
-    #             dnac_version="2.3.7.6",
-    #             dnac_log=True,
-    #             state="merged",
-    #             config=self.playbook_config_invalid_param
-    #         )
-    #     )
-    #     result = self.execute_module(changed=False, failed=True)
-    #     self.assertFalse(
-    #         "Invalid parameters in playbook:" in result.get('msg')
-    #     )
-
-    # def test_site_workflow_manager_invalid_delete_site(self):
-
-    #     """
-    #     Test case for site workflow manager with invalid parameters in the playbook.
-
-    #     This test case checks the behavior of the site workflow manager when the playbook contains invalid parameters.
-    #     """
-
-    #     set_module_args(
-    #         dict(
-    #             dnac_host="1.1.1.1",
-    #             dnac_username="dummy",
-    #             dnac_password="dummy",
-    #             dnac_version="2.3.7.6",
-    #             dnac_log=True,
-    #             state="merged",
-    #             config=self.test_data.get("playbook_config_invalid_param")
-    #         )
-    #     )
-    #     result = self.execute_module(changed=False, failed=True)
-    #     self.assertFalse(
-    #         "Invalid parameters in playbook:" in result.get('msg')
-    #     )
-
-    # def test_Site_workflow_manager_invalid_delete_config(self):
-    #     """
-    #     Test case for site workflow manager when creating a site.
-
-    #     This test case checks the behavior of the site workflow manager when creating a new site in the specified DNAC.
-    #     """
-    #     set_module_args(
-    #         dict(
-    #             dnac_host="1.1.1.1",
-    #             dnac_username="dummy",
-    #             dnac_password="dummy",
-    #             dnac_version="2.3.7.6",
-    #             dnac_log=True,
-    #             state="merged",
-    #             config=self.playbook_config_empty
-    #         )
-    #     )
-    #     result = self.execute_module(changed=False, failed=False)
-    #     self.maxDiff = None
-    #     self.assertEqual(
-    #         result.get('msg'),
-    #         "Unable to delete site(s) '[]' as it's not found in Cisco Catalyst Center."
-    #     )
-
