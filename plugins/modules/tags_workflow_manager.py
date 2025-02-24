@@ -4,7 +4,8 @@
 # Copyright (c) 2022, Cisco Systems
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
+# Files to remove and store elsewhere, dnac_old, dnac_new, experiment, .ymls of tags.
+#  Also check the dnac.py is up to date with the remote, make sure no changes are made when PR is raised.
 #  TODO: check all the get functions and check that if NONE CASE IS HANDELLED OR NOT
 from __future__ import absolute_import, division, print_function
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
@@ -863,7 +864,7 @@ class Tags(DnacBase):
                                                 otherwise, None.
         """
 
-        temp_spec = {
+        validation_schema = {
             'tag': {
                 'type': 'dict',
                 'elements': 'dict',
@@ -962,7 +963,7 @@ class Tags(DnacBase):
         
         # Validate device params
         valid_temp, invalid_params = self.validate_list_of_dicts(
-            self.config, temp_spec
+            self.config, validation_schema
         )
 
         if invalid_params:
@@ -1531,8 +1532,8 @@ class Tags(DnacBase):
                 params={"name": tag_name}
             )
 
-            response = response.get("response")
             self.log("Received API response from 'get_tag' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
+            response = response.get("response")
 
             # Check if the response is empty
             if not response:
@@ -1572,8 +1573,8 @@ class Tags(DnacBase):
             )
 
             # Check if the response is empty
-            response = response.get("response")
             self.log("Received API response from 'get_site' for the site '{0}': {1}".format(site_name, str(response)), "DEBUG")
+            response = response.get("response")
 
             if not response:
                 self.log("No Site details retrieved for Site name: {0}, Response empty.".format(site_name), "DEBUG")
@@ -2185,8 +2186,8 @@ class Tags(DnacBase):
             )
 
             # Check if the response is empty
-            response = response.get("response")
             self.log("Received API response from 'get_tag' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
+            response = response.get("response")
 
             if not response:
                 self.msg = "No tag details retrieved for tag name: {0}, Response empty.".format(tag_name)
@@ -2235,8 +2236,8 @@ class Tags(DnacBase):
                 params=payload
             )
             # Check if the response is empty
-            response = response.get("response")
             self.log("Received API response from 'get_device_list' for the Device with {0}: '{1}' : {2}".format(param, param_value, str(response)), "DEBUG")
+            response = response.get("response")
 
             if not response:
                 self.msg = "No Device details retrieved for Device with {0}: {1}, Response empty.".format(param, param_value)
@@ -2276,8 +2277,8 @@ class Tags(DnacBase):
                 params={"device_id": device_id, "name": port_name}
             )
 
-            response = response.get("response")
             self.log("Received API response from 'get_interface_details' for the interface name: '{0}' of device with {1}: '{2}' is : {3}".format(port_name, device_identifier, device_identifier_value, str(response)), "DEBUG")
+            response = response.get("response")
 
             if not response:
                 self.msg = "No interface details for interface name: '{0}' of device with {1}: '{2}', Response empty.".format(port_name, device_identifier, device_identifier_value)
@@ -2444,8 +2445,8 @@ class Tags(DnacBase):
                 )
 
                 # Check if the response is empty
-                response = response.get("response")
                 self.log("Received API response from 'get_site_assigned_network_devices' for the site name: '{0}' for batch:{1}: {2}".format(site_name, batch , str(response)), "DEBUG")
+                response = response.get("response")
 
                 if not response:
                     self.msg = "No devices found under the site name: {0} for batch :{1}, Response empty.".format(site_name, batch)
@@ -2454,6 +2455,9 @@ class Tags(DnacBase):
                 
                 for response_ele in response:
                     device_id_list.append(response_ele.get("deviceId"))
+                
+                if len(response)<limit:
+                    break
                 
             except Exception as e:
                 self.msg = """Error while getting the details of the devices under the site name '{0}' for batch {1} present in
@@ -2564,8 +2568,8 @@ class Tags(DnacBase):
                 params=payload
             )
             # Check if the response is empty
-            response = response.get("response")
             self.log("Received API response from 'get_device_list' for the Device with Id: {0}, {1}".format(device_id, str(response)), "DEBUG")
+            response = response.get("response")
 
             if not response:
                 self.msg = "No Device details retrieved for Device with Id: {0}, Response empty.".format(device_id)
@@ -2668,8 +2672,8 @@ class Tags(DnacBase):
                     params=payload,
                 )
                 # Check if the response is empty
-                response = response.get("response")
                 self.log("Received API response from 'query_the_tags_associated_with_network_devices' for batch {0} payload: {1}, {2}".format(i//BATCH_SIZE + 1, payload, str(response)), "DEBUG")
+                response = response.get("response")
 
                 if not response:
                     self.log("No tags details retrieved for network_device_details: {0}, Response empty.".format(network_device_details), "DEBUG")
@@ -2730,8 +2734,8 @@ class Tags(DnacBase):
                     params=payload,
                 )
                 # Check if the response is empty
-                response = response.get("response")
                 self.log("Received API response from 'query_the_tags_associated_with_interfaces' for the batch:{0} with payload: {1} is: {2}".format(i//BATCH_SIZE + 1, payload, str(response)), "DEBUG")
+                response = response.get("response")
                 if not response:
                     self.msg = "No tags details retrieved for interface_details: {0}, Response empty.".format(interface_details)
                     self.log(self.msg, "DEBUG")
@@ -3540,8 +3544,8 @@ class Tags(DnacBase):
                         "offset": offset,
                     }
                 )
-                response = response.get("response")
                 self.log("Received API response from 'get_tag_members_by_id' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
+                response = response.get("response")
                 if not response:
                     break
 
@@ -3555,6 +3559,8 @@ class Tags(DnacBase):
                         "device_value": device_name,
                     }
                     member_details.append(device_detail_dict)
+                if len(response)<limit:
+                    break
             except Exception as e:
                 self.msg = """Error while getting the details of Tag Members with given name '{0}' present in
                 Cisco Catalyst Center: {1}""".format(tag_name, str(e))
@@ -3576,8 +3582,8 @@ class Tags(DnacBase):
                         "offset": offset,
                     },
                 )
-                response = response.get("response")
                 self.log("Received API response from 'get_tag_members_by_id' for the tag '{0}': {1}".format(tag_name, str(response)), "DEBUG")
+                response = response.get("response")
                 if not response:
                     break
 
@@ -3594,7 +3600,8 @@ class Tags(DnacBase):
                         "interface_name":interface_name
                     }
                     member_details.append(interface_detail_dict)
-
+                if len(response)<limit:
+                    break
             except Exception as e:
                 self.msg = """Error while getting the details of Tag Members with given name '{0}' present in
                 Cisco Catalyst Center: {1}""".format(tag_name, str(e))
@@ -3819,7 +3826,7 @@ class Tags(DnacBase):
                         # Entire Tag Deletion Case
                         self.log("Starting deletion of the tag: {0}".format(tag_name), "DEBUG")
                         tag_id = tag_in_ccc.get("id")
-                        self.delete_tag(tag, tag_id)
+                        self.delete_tag(tag, tag_id).check_return_status()
                         self.deleted_tag.append(tag_name)
                     else:
                         requires_update, updated_tag_info = self.compare_and_update_tag(tag, tag_in_ccc)
