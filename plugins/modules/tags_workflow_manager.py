@@ -2394,13 +2394,19 @@ class Tags(DnacBase):
 
         except Exception as e:
             error_message = str(e)
-            if "status_code: 404" in error_message and "No resource found with deviceId: {0} and interfaceName:{1}".format(device_id, port_name) in error_message:
+            if (
+                "status_code: 404" in error_message and
+                "No resource found with deviceId: {0} and interfaceName:{1}".format(device_id, port_name) in error_message
+            ):
                 self.log("Interface not found for '{0}' on device with {1}: '{2}'. Skipping. Error: {3}".format(
                     port_name, device_identifier, device_identifier_value, error_message), "INFO")
                 return None  # Skips the operation when this specific error occurs
 
-            self.msg = """Could Not retrieve Interface information for '{0}' of device with {1}: '{2}' in Cisco Catalyst Center. Exception Caused: {3}""".format(
-                port_name, device_identifier, device_identifier_value, str(e))
+            self.msg = (
+                "Could Not retrieve Interface information for '{0}' of device with {1}: '{2}'"
+                "in Cisco Catalyst Center. Exception Caused: {3}"
+                .format(port_name, device_identifier, device_identifier_value, str(e))
+            )
             self.fail_and_exit(self.msg)
 
     def deduplicate_list_of_dict(self, list_of_dicts):
@@ -2603,7 +2609,8 @@ class Tags(DnacBase):
             list: A list of device and interface details with IDs, including site names.
 
         Description:
-            This function processes the site details, retrieves the device and interface IDs for each site, and formats the data for further processing. It handles deduplication and error logging for missing sites and devices.
+            This function processes the site details, retrieves the device and interface IDs for each site, and
+            formats the data for further processing. It handles deduplication and error logging for missing sites and devices.
         """
         device_ids = []
         for site_detail in site_details:
@@ -2783,7 +2790,8 @@ class Tags(DnacBase):
             network_device_details (list): A list of dictionaries, each containing 'id' (device ID) to identify the network devices.
 
         Returns:
-            dict: A dictionary where the keys are device IDs and the values are lists of dictionaries, each containing 'tag_name' and 'tag_id' for associated tags.
+            dict: A dictionary where the keys are device IDs and the values are lists of dictionaries,
+            each containing 'tag_name' and 'tag_id' for associated tags.
 
         Description:
             Retrieves tags associated with a list of network devices in batches from the Cisco Catalyst Center.
@@ -3409,8 +3417,12 @@ class Tags(DnacBase):
                 scope_description = port_rules.get("scopeRule")
                 rules = port_rules.get("rules")
                 if not scope_description or not rules:
-                    self.msg = """Either of rule_description:{0} or scope_description:{1} is empty in port_rules.
-                    As existing port_rules are not present in Cisco Catalyst Center, Both are required for an update (i.e. first time creation)""".format(rules, scope_description)
+                    self.msg = (
+                        "Either of rule_description:{0} or scope_description:{1} is empty in port_rules."
+                        "As existing port_rules are not present in Cisco Catalyst Center,"
+                        "Both are required for an update (i.e. first time creation)"
+                        .format(rules, scope_description)
+                    )
                     self.set_operation_result(
                         "failed", False, self.msg, "ERROR").check_return_status()
                 return requires_update, port_rules
@@ -3450,7 +3462,8 @@ class Tags(DnacBase):
         if not updated_scope_description or not updated_rules:
             if not updated_scope_description:
                 self.msg = ("On deletion, the scope description for port rules {0} is being cleared entirely. "
-                            "Atleast one scope member must be left after deletion to proceed with the deletion in Cisco Catalyst Center").format(updated_scope_description)
+                            "Atleast one scope member must be left after deletion to proceed"
+                            "with the deletion in Cisco Catalyst Center").format(updated_scope_description)
                 self.set_operation_result(
                     "failed", False, self.msg, "ERROR").check_return_status()
             else:
@@ -4134,8 +4147,12 @@ class Tags(DnacBase):
                     device_identifier = network_device_detail.get(
                         "device_identifier")
                     device_value = network_device_detail.get("device_value")
-                    self.log("Tag membership in Cisco catalyst center for device with {0}:{1} is different than provided in the playbook. Playbook operation might not be successful".format(
-                        device_identifier, device_value), "WARNING")
+                    self.msg = (
+                        "Tag membership in Cisco catalyst center for device with {0}:{1}"
+                        "is different than provided in the playbook. Playbook operation might not be successful"
+                        .format(device_identifier, device_value)
+                    )
+                    self.log(self.msg, "WARNING")
 
         if interface_details:
             fetched_tags_details = self.get_tags_associated_with_the_interfaces(
@@ -4152,8 +4169,13 @@ class Tags(DnacBase):
                         "device_identifier")
                     device_value = interface_detail.get("device_value")
                     interface_name = interface_detail.get("interface_name")
-                    self.log("Tag membership in Cisco catalyst center for the interface {0} belonging to device with {1}:{2} is different than provided in the playbook. Playbook operation might not be successful".format(
-                        interface_name, device_identifier, device_value), "WARNING")
+                    self.msg = (
+                        "Tag membership in Cisco catalyst center for the interface {0} belonging to"
+                        " device with {1}:{2} is different than provided in the playbook. "
+                        "Playbook operation might not be successful"
+                        .format(interface_name, device_identifier, device_value)
+                    )
+                    self.log(self.msg, "WARNING")
 
         return verify_success
 
@@ -4189,8 +4211,12 @@ class Tags(DnacBase):
 
                 if requires_update:
                     verify_diff = False
-                    self.log("Tag Details present in playbook and Cisco Catalyst Center does not match for the tag {0}. Playbook operation might be unsuccessful".format(
-                        tag_name), "WARNING")
+                    self.msg = (
+                        "Tag Details present in playbook and Cisco Catalyst Center does not match"
+                        " for the tag {0}. Playbook operation might be unsuccessful"
+                        .format(tag_name)
+                    )
+                    self.log(self.msg, "WARNING")
                 else:
                     self.log("Tag Details present in playbook and Cisco Catalyst Center are same for the tag {0}.".format(
                         tag_name), "DEBUG")
@@ -4261,8 +4287,12 @@ class Tags(DnacBase):
                             tag, tag_in_ccc)
                         if requires_update:
                             verify_diff = False
-                            self.log("Tag details for Tag:{0} are different in Cisco Catalyst Center and Playbook. Playbook operation might be unsuccessful".format(
-                                tag_name), "WARNING")
+                            self.msg = (
+                                "Tag details for Tag:{0} are different in Cisco Catalyst Center and Playbook."
+                                "Playbook operation might be unsuccessful"
+                                .format(tag_name)
+                            )
+                            self.log(self.msg, "WARNING")
                         else:
                             self.log("Tag details for Tag:{0} are same in Cisco Catalyst Center and Playbook.".format(
                                 tag_name), "DEBUG")
