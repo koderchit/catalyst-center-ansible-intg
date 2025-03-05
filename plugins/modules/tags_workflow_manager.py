@@ -4,9 +4,6 @@
 # Copyright (c) 2022, Cisco Systems
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-# Files to remove and store elsewhere, dnac_old, dnac_new, experiment, .ymls of tags.
-#  Also check the dnac.py is up to date with the remote, make sure no changes are made when PR is raised.
-
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
