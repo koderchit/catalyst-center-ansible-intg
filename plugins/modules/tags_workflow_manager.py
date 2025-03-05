@@ -781,13 +781,12 @@ dnac_response:
     }
 """
 
+from collections import defaultdict
+from ansible.module_utils.common import validation
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.dnac.plugins.module_utils.dnac import (
     DnacBase
 )
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.common import validation
-
-from collections import defaultdict
 
 
 class Tags(DnacBase):
@@ -2393,7 +2392,8 @@ class Tags(DnacBase):
             error_message = str(e)
             if (
                 "status_code: 404" in error_message and
-                "No resource found with deviceId: {0} and interfaceName:{1}".format(device_id, port_name) in error_message
+                "No resource found with deviceId: {0} and interfaceName:{1}".format(
+                    device_id, port_name) in error_message
             ):
                 self.log("Interface not found for '{0}' on device with {1}: '{2}'. Skipping. Error: {3}".format(
                     port_name, device_identifier, device_identifier_value, error_message), "INFO")
@@ -2776,7 +2776,8 @@ class Tags(DnacBase):
                 "failed", False, self.msg, "ERROR").check_return_status()
             return self
 
-        success_msg = "Added Tag members successfully for the tag {0} in the Cisco Catalyst Center".format(tag_name)
+        success_msg = "Added Tag members successfully for the tag {0} in the Cisco Catalyst Center".format(
+            tag_name)
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
 
         return self
