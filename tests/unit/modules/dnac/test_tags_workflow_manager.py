@@ -185,9 +185,10 @@ class TestDnacTagsWorkflow(TestDnacModule):
         self.assertEqual(
             result.get('msg'),
             ("Tag 'ServersTag' has been deleted successfully in the Cisco Catalyst Center.\n"
-             "The Interface TenGigabitEthernet1/0/11 of device with hostname: S2-VZA-Edge-1 has been tagged to ServersTag"
-             "\nThe Device with hostname: S2-VZA-Border-2.cisco.com has been untagged from ServersTag"
-             "\nThe Device with hostname: S2-VZA-Border-1 has been untagged from ServersTag")
+             "The Device with hostname: S2-VZA-Border-2.cisco.com has been untagged from ServersTag"
+             "\nThe Device with hostname: S2-VZA-Border-1 has been untagged from ServersTag"
+             "\nThe Interface TenGigabitEthernet1/0/11 of device with hostname: S2-VZA-Edge-1 has been untagged from ServersTag"
+             )
         )
 
     def test_update_scope_of_a_tag_with_only_port_rule(self):
