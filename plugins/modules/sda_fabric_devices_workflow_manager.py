@@ -76,7 +76,7 @@ options:
                   - Mandatory parameter for all operations under fabric_devices.
                   - Device must be provisioned to the site prior to configuration.
                   - For deleting a device, the device will be deleted if the user
-                    doesnot pass the layer3_handoff_ip_transit, layer3_handoff_sda_transit
+                    does not pass the layer3_handoff_ip_transit, layer3_handoff_sda_transit
                     and layer2_handoff with the state as deleted.
                 type: str
                 required: true
@@ -388,7 +388,7 @@ options:
                   layer2_handoff:
                     description:
                       - Adds layer 2 handoffs in fabric devices.
-                      - This parameter cannots be updated.
+                      - This parameter cannot be updated.
                       - Configured while transferring a device's data traffic at Layer
                         2 (Data Link layer).
                       - If 'layer2_handoff' is set, the border type will be considered
@@ -901,7 +901,7 @@ response_1:
       },
       "version": "str"
     }
-# Case_2: Successful updation of SDA fabric devices
+# Case_2: Successful update of SDA fabric devices
 response_2:
   description: A dictionary or list with the response returned by the Cisco Catalyst Center Python SDK
   returned: always
@@ -966,7 +966,7 @@ response_6:
       },
       "version": "str"
     }
-# Case_7: Successful updation L3 Handoff with SDA transit in fabric device
+# Case_7: Successful update L3 Handoff with SDA transit in fabric device
 response_7:
   description: A dictionary or list with the response returned by the Cisco Catalyst Center Python SDK
   returned: always
@@ -979,7 +979,7 @@ response_7:
       },
       "version": "str"
     }
-# Case_8: Successful updation L3 Handoff with SDA transit in fabric device
+# Case_8: Successful update L3 Handoff with SDA transit in fabric device
 response_8:
   description: A dictionary or list with the response returned by the Cisco Catalyst Center Python SDK
   returned: always
@@ -1018,7 +1018,7 @@ response_10:
       },
       "version": "str"
     }
-# Case_11: Successful updation L3 Handoff with IP transit in fabric device
+# Case_11: Successful update L3 Handoff with IP transit in fabric device
 response_11:
   description: A dictionary or list with the response returned by the Cisco Catalyst Center Python SDK
   returned: always
@@ -1256,7 +1256,7 @@ class FabricDevices(DnacBase):
         Parameters:
             transit_name (str): The name of the transit network.
         Returns:
-            transit_id (str or None): The ID of the transit network. None, if transit doesnot exist.
+            transit_id (str or None): The ID of the transit network. None, if transit does not exist.
         Description:
             Call the API 'get_transit_networks' by setting the 'name' field with the
             given transit name.
@@ -1272,7 +1272,7 @@ class FabricDevices(DnacBase):
                 params={"name": transit_name},
             )
 
-            # If the SDK returns no response, then the transit doesnot exist
+            # If the SDK returns no response, then the transit does not exist
             transit_details = transit_details.get("response")
             if not transit_details:
                 self.log(
@@ -1307,7 +1307,7 @@ class FabricDevices(DnacBase):
         Parameters:
             device_ip (str): The IP address of the network device.
         Returns:
-            device_details (dict or None): The details of the network device. None, if the device doesnot exist.
+            device_details (dict or None): The details of the network device. None, if the device does not exist.
         Description:
             Call the API 'get_device_list' by setting the 'management_ip_address' field with the
             given IP address.
@@ -1327,7 +1327,7 @@ class FabricDevices(DnacBase):
                 .format(response=device_details), "DEBUG"
             )
 
-            # If the SDK returns no response, then the device doesnot exist
+            # If the SDK returns no response, then the device does not exist
             device_details = device_details.get("response")
             if not device_details:
                 self.log(
@@ -1389,7 +1389,7 @@ class FabricDevices(DnacBase):
                 self.status = "failed"
                 return self.check_return_status()
 
-            # if the SDK returns no response, then the virtual network doesnot exist
+            # if the SDK returns no response, then the virtual network does not exist
             virtual_network_details = virtual_network_details.get("response")
             if not virtual_network_details:
                 self.log(
@@ -1555,7 +1555,7 @@ class FabricDevices(DnacBase):
                 self.status = "failed"
                 return self.check_return_status()
 
-            # if the SDK returns no response, then the virtual network doesnot exist
+            # if the SDK returns no response, then the virtual network does not exist
             fabric_site_exists = fabric_site_exists.get("response")
             if not fabric_site_exists:
                 self.log(
@@ -1622,7 +1622,7 @@ class FabricDevices(DnacBase):
                 self.status = "failed"
                 return self.check_return_status()
 
-            # if the SDK returns no response, then the virtual network doesnot exist
+            # if the SDK returns no response, then the virtual network does not exist
             fabric_zone = fabric_zone.get("response")
             if not fabric_zone:
                 self.log(
@@ -1862,7 +1862,7 @@ class FabricDevices(DnacBase):
             if self.params.get("state") == "deleted":
                 self.log(
                     "The state is 'deleted', so we are returning SDA L3 Handoffs without any further checks "
-                    "eventhough there is no transit with the name '{transit_name}'."
+                    "even though there is no transit with the name '{transit_name}'."
                     .format(transit_name=transit_name), "INFO"
                 )
                 return sda_l3_handoff_details
@@ -1976,7 +1976,7 @@ class FabricDevices(DnacBase):
             if self.params.get("state") == "deleted":
                 self.log(
                     "The state is 'deleted', so we are returning IP L3 Handoffs without any further checks "
-                    "eventhough there is no transit with the name '{transit_name}'."
+                    "even though there is no transit with the name '{transit_name}'."
                     .format(transit_name=transit_name), "INFO"
                 )
                 return ip_l3_handoff_details
@@ -2201,7 +2201,7 @@ class FabricDevices(DnacBase):
                                                    interface_name)
             fabric_devices_info.get("l2_handoff_details").append(l2_handoff_id)
 
-        self.log("Successfully proccessed the L2 Handoff information.", "DEBUG")
+        self.log("Successfully processed the L2 Handoff information.", "DEBUG")
         return fabric_devices_info
 
     def process_layer3_sda_handoff(self, fabric_devices_info, layer3_handoff_sda_transit, fabric_site_id, network_device_id, fabric_device_ip):
@@ -2243,7 +2243,7 @@ class FabricDevices(DnacBase):
                 "sda_l3_handoff_details": sda_l3_handoff_details
             })
 
-        self.log("Successfully proccessed the SDA L3 Handoff information.", "DEBUG")
+        self.log("Successfully processed the SDA L3 Handoff information.", "DEBUG")
         return fabric_devices_info
 
     def process_layer3_ip_handoff(self, fabric_devices_info, layer3_handoff_ip_transit, fabric_site_id, network_device_id, fabric_device_ip):
@@ -2307,7 +2307,7 @@ class FabricDevices(DnacBase):
                                                              vlan_id)
             fabric_devices_info.get("ip_l3_handoff_details").append(ip_l3_handoff_detail)
 
-        self.log("Successfully proccessed the IP L3 Handoff information.", "DEBUG")
+        self.log("Successfully processed the IP L3 Handoff information.", "DEBUG")
         return fabric_devices_info
 
     def get_have_fabric_devices(self, fabric_devices):
@@ -3343,7 +3343,7 @@ class FabricDevices(DnacBase):
                 },
             )
 
-            # If the SDK returns no response, then the transit doesnot exist with type 'SDA_LISP_PUB_SUB_TRANSIT'
+            # If the SDK returns no response, then the transit does not exist with type 'SDA_LISP_PUB_SUB_TRANSIT'
             transit_details = transit_details.get("response")
             if not transit_details:
                 self.log(
@@ -3883,7 +3883,7 @@ class FabricDevices(DnacBase):
                 .format(l3_ip_handoff=l3_ip_handoff), "DEBUG"
             )
 
-            # If the fabric device is avaiable, then fetch the local and remote IP addresses
+            # If the fabric device is available, then fetch the local and remote IP addresses
             if is_ip_l3_handoff_exists:
                 local_ip_address = have_ip_l3_handoff[l3_ip_handoff_index].get("localIpAddress")
                 remote_ip_address = have_ip_l3_handoff[l3_ip_handoff_index].get("remoteIpAddress")
@@ -4540,7 +4540,7 @@ class FabricDevices(DnacBase):
         Returns:
             self (object): The current object with adding SDA fabric device information.
         Description:
-            Find the length of the payload, if it is greater than 40, seperate it out into batches of 40.
+            Find the length of the payload, if it is greater than 40, separate it out into batches of 40.
             Call the add fabric devices API with the bulk payload. Check the task status from the task ID.
         """
 
@@ -4554,7 +4554,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -4593,7 +4593,7 @@ class FabricDevices(DnacBase):
         Returns:
             self (object): The current object with updated SDA fabric device information.
         Description:
-            Find the length of the payload, if it is greater than 40, seperate it out into batches of 40.
+            Find the length of the payload, if it is greater than 40, separate it out into batches of 40.
             Call the update fabric devices API with the bulk payload. Check the task status from the task ID.
         """
 
@@ -4607,7 +4607,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -4667,7 +4667,7 @@ class FabricDevices(DnacBase):
         create_l2_handoff = []
         l2_handoff_index = -1
 
-        # The L2 Handoffs doesnot support updation
+        # The L2 Handoffs does not support update
         # So find which L2 handoffs need to be created and which needs to be ignored
         for item in want_l2_handoff:
             l2_handoff_index += 1
@@ -4695,7 +4695,7 @@ class FabricDevices(DnacBase):
             task_id = self.get_taskid_post_api_call("sda", task_name, payload)
             if not task_id:
                 self.msg = (
-                    "Unable to retrive the task_id for the task '{task_name}'."
+                    "Unable to retrieve the task_id for the task '{task_name}'."
                     .format(task_name=task_name)
                 )
                 self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -4771,7 +4771,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -4822,7 +4822,7 @@ class FabricDevices(DnacBase):
             result_fabric_device_msg.update({
                 "sda_l3_handoff_details": "SDA L3 Handoff doesn't require an update."
             })
-            self.msg = "L3 Handoff with SDA Transit doesnot require an update."
+            self.msg = "L3 Handoff with SDA Transit does not require an update."
             self.status = "success"
             return self
 
@@ -4842,7 +4842,7 @@ class FabricDevices(DnacBase):
             task_id = self.get_taskid_post_api_call("sda", task_name, payload)
             if not task_id:
                 self.msg = (
-                    "Unable to retrive the task_id for the task '{task_name}'."
+                    "Unable to retrieve the task_id for the task '{task_name}'."
                     .format(task_name=task_name)
                 )
                 self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -4983,7 +4983,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -5022,7 +5022,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -5050,7 +5050,7 @@ class FabricDevices(DnacBase):
                 "updation": update_ip_l3_handoff
             })
             result_fabric_device_msg.get("ip_l3_handoff_details").update({
-                "updation": "IP L3 Handoffs updation is successful."
+                "updation": "IP L3 Handoffs update is successful."
             })
 
         self.msg = "L3 Handoff(s) with IP Transit operations are successful."
@@ -5917,7 +5917,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -5988,7 +5988,7 @@ class FabricDevices(DnacBase):
                 "No SDA L3 Handoff found for device IP '{device_ip}'."
                 .format(device_ip=device_ip), "DEBUG"
             )
-            self.log("The SDA L3 Handoff doesnot exist under the device {device_ip}.".format(device_ip=device_ip))
+            self.log("The SDA L3 Handoff does not exist under the device {device_ip}.".format(device_ip=device_ip))
             result_fabric_device_msg.update({
                 "sda_l3_handoff_details": "SDA L3 Handoff is not found in the Cisco Catalyst Center."
             })
@@ -6009,7 +6009,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -6074,7 +6074,7 @@ class FabricDevices(DnacBase):
         delete_ip_l3_handoff = []
         non_existing_ip_l3_handoff = []
 
-        # Check which IP L3 Handoff exists and which doesnot
+        # Check which IP L3 Handoff exists and which does not
         for item in have_ip_l3_handoff:
             if not item:
                 non_existing_ip_l3_handoff.append(item)
@@ -6095,7 +6095,7 @@ class FabricDevices(DnacBase):
                 task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                 if not task_id:
                     self.msg = (
-                        "Unable to retrive the task_id for the task '{task_name}'."
+                        "Unable to retrieve the task_id for the task '{task_name}'."
                         .format(task_name=task_name)
                     )
                     self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -6198,7 +6198,7 @@ class FabricDevices(DnacBase):
                 ).check_return_status()
             else:
                 result_fabric_device_msg.update({
-                    "l3_ip_handoff": "IP L3 Handoff doesnot found in the Cisco Catalyst Center."
+                    "l3_ip_handoff": "IP L3 Handoff does not found in the Cisco Catalyst Center."
                 })
             have_sda_l3_handoff = have_fabric_device.get("sda_l3_handoff_details")
             if have_sda_l3_handoff:
@@ -6211,7 +6211,7 @@ class FabricDevices(DnacBase):
                 ).check_return_status()
             else:
                 result_fabric_device_msg.update({
-                    "l3_sda_handoff": "SDA L3 Handoff doesnot found in the Cisco Catalyst Center."
+                    "l3_sda_handoff": "SDA L3 Handoff does not found in the Cisco Catalyst Center."
                 })
 
             have_ip_l3_handoff = have_fabric_device.get("ip_l3_handoff_details")
@@ -6225,7 +6225,7 @@ class FabricDevices(DnacBase):
                     result_fabric_device_msg).check_return_status()
             else:
                 result_fabric_device_msg.update({
-                    "l2_handoff": "L2 Handoff doesnot found in the Cisco Catalyst Center."
+                    "l2_handoff": "L2 Handoff does not found in the Cisco Catalyst Center."
                 })
 
             device_exists = have_fabric_device.get("exists")
@@ -6262,7 +6262,7 @@ class FabricDevices(DnacBase):
                         task_id = self.get_taskid_post_api_call("sda", task_name, payload)
                         if not task_id:
                             self.msg = (
-                                "Unable to retrive the task_id for the task '{task_name}'."
+                                "Unable to retrieve the task_id for the task '{task_name}'."
                                 .format(task_name=task_name)
                             )
                             self.set_operation_result("failed", False, self.msg, "ERROR")
@@ -6421,7 +6421,7 @@ class FabricDevices(DnacBase):
 
         if self.requires_update(have_device_details, want_device_details, self.fabric_devices_obj_params):
             self.msg = (
-                "The border setting for SDA devce with IP '{ip}' is still not "
+                "The border setting for SDA device with IP '{ip}' is still not "
                 "applied to the Cisco Catalyst Center.".format(ip=device_ip)
             )
             self.status = "failed"
@@ -6709,7 +6709,7 @@ class FabricDevices(DnacBase):
 
     def reset_values(self):
         """
-        Reset all neccessary attributes to default values
+        Reset all necessary attributes to default values
 
         Parameters:
             self (object): The current object details.
