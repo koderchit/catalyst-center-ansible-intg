@@ -573,7 +573,7 @@ EXAMPLES = r"""
             - device_ip: 10.0.0.1
               wireless_controller_settings:
                 rolling_ap_upgrade:
-                    enable: false
+                  enable: false
 
 - name: Update SDA fabric device with device role containing WIRELESSS_CONTROLLER_NODE to disable wireless capabilities with reload.
   cisco.dnac.sda_fabric_devices_workflow_manager:
