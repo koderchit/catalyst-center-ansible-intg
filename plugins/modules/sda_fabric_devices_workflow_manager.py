@@ -562,18 +562,18 @@ EXAMPLES = r"""
     dnac_port: "{{dnac_port}}"
     dnac_version: "{{dnac_version}}"
     dnac_debug: "{{dnac_debug}}"
-    dnac_log: True
+    dnac_log: true
     dnac_log_level: "{{ dnac_log_level }}"
     state: merged
-    config_verify: True
+    config_verify: true
     config:
-    - fabric_devices:
-        fabric_name: Global/USA/SAN-JOSE
-        device_config:
-        - device_ip: 10.0.0.1
-          wireless_controller_settings:
-            rolling_ap_upgrade:
-                enable: false
+      - fabric_devices:
+          fabric_name: Global/USA/SAN-JOSE
+          device_config:
+            - device_ip: 10.0.0.1
+              wireless_controller_settings:
+                rolling_ap_upgrade:
+                    enable: false
 
 - name: Update SDA fabric device with device role containing WIRELESSS_CONTROLLER_NODE to disable wireless capabilities with reload.
   cisco.dnac.sda_fabric_devices_workflow_manager:
@@ -584,18 +584,18 @@ EXAMPLES = r"""
     dnac_port: "{{dnac_port}}"
     dnac_version: "{{dnac_version}}"
     dnac_debug: "{{dnac_debug}}"
-    dnac_log: True
+    dnac_log: true
     dnac_log_level: "{{ dnac_log_level }}"
     state: merged
-    config_verify: True
+    config_verify: true
     config:
-    - fabric_devices:
-        fabric_name: Global/USA/SAN-JOSE
-        device_config:
-        - device_ip: 10.0.0.1
-          wireless_controller_settings:
-            enable: false
-            reload: true
+      - fabric_devices:
+          fabric_name: Global/USA/SAN-JOSE
+          device_config:
+            - device_ip: 10.0.0.1
+              wireless_controller_settings:
+                enable: false
+                reload: true
 
 
 - name: Create SDA fabric device with device role as CONTROL_PLANE_NODE, EDGE_NODE,
