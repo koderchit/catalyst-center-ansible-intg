@@ -432,6 +432,9 @@ notes:
     - Border + Control Plane + Edge + Wireless Controller (B+CP+E+WC)
     - Border + Control Plane + Wireless Controller (B+CP+WC)
     - Edge + Wireless Controller (E+WC)
+  - The 9800-SW image is required to enable wireless controller capabilities on this switch.
+    Once the 9800-SW image has been distributed and activated, please resync the device before completing
+    the Embedded Wireless LAN Controller workflow.
   - A maximum of two devices can have Embedded Wireless Controller Capabilities in the fabric.
   - SDK Method used are site_design.SiteDesign.get_sites, network_settings.NetworkSettings.get_reserve_ip_subpool,
     devices.Devices.get_device_list, sda.Sda.get_transit_networks, sda.Sda.get_layer3_virtual_networks,
@@ -6469,22 +6472,45 @@ class FabricDevices(DnacBase):
                 "DEBUG"
             )
 
-        requires_update, updated_wireless_settings = self.check_wireless_controller_settings_requires_update(
-            have_wireless_controller_settings,
-            want_wireless_controller_settings,
-            device_ip
-        )
+        want_rolling_ap_upgrade_enable = want_wireless_controller_settings.get("rolling_ap_upgrade").get("enable")
+        self.log(f"Checking if 'rolling_ap_upgrade' is enabled in the desired settings for device '{device_ip}'.", "INFO")
 
-        if requires_update:
-            self.msg = (
-                f"Wireless Controller Settings are NOT updated for device with IP '{device_ip}' under fabric '{fabric_name}'. Verification failed."
+        if want_rolling_ap_upgrade_enable:
+            self.log(f"'rolling_ap_upgrade' is enabled in the desired configuration for device '{device_ip}'. Checking if an update is required.", "INFO")
+            requires_update, updated_wireless_settings = self.check_wireless_controller_settings_requires_update(
+                have_wireless_controller_settings,
+                want_wireless_controller_settings,
+                device_ip
             )
-            self.fail_and_exit(self.msg)
+            if requires_update:
+                self.msg = (
+                    f"Wireless Controller Settings are NOT updated for device with IP '{device_ip}' under fabric '{fabric_name}'. Verification failed."
+                )
+                self.fail_and_exit(self.msg)
+            else:
+                self.log(
+                    f"Wireless Controller Settings are updated for the device with IP address '{device_ip}' under fabric: '{fabric_name}.'",
+                    "INFO"
+                )
         else:
-            self.msg = (
-                f"Wireless Controller Settings are updated for the device with IP address '{device_ip}' under fabric: '{fabric_name}.'"
-            )
-            pass
+            self.log(f"'rolling_ap_upgrade' is disabled in the desired configuration for device '{device_ip}'. Checking if an update is required.", "INFO")
+            if have_wireless_controller_settings:
+                self.log(f"Current wireless controller settings found for device '{device_ip}'. Verifying 'rolling_ap_upgrade' status.", "INFO")
+                have_rolling_ap_upgrade_enable = have_wireless_controller_settings.get("rolling_ap_upgrade").get("enable")
+                if have_rolling_ap_upgrade_enable != want_rolling_ap_upgrade_enable:
+                    self.msg = (
+                        f"Mismatch in 'rolling_ap_upgrade' configuration for device '{device_ip}' under fabric '{fabric_name}'. "
+                        f"Expected 'disabled', but found 'enabled'. Verification failed."
+                    )
+                    self.fail_and_exit(self.msg)
+                else:
+                    self.log(f"'rolling_ap_upgrade' is correctly disabled on device '{device_ip}'. No update needed.", "INFO")
+            else:
+                self.msg = (
+                    f"Failed to retrieve current wireless controller settings for device '{device_ip}'. "
+                    f"Verification failed."
+                )
+                self.fail_and_exit(self.msg)
 
         self.msg = (
             f"All Wireless Controller Settings are updated successfully for the device with IP address '{device_ip}' under fabric: '{fabric_name}.'"
@@ -6537,7 +6563,7 @@ class FabricDevices(DnacBase):
                 have_details = self.have.get("fabric_devices")[fabric_device_index]
                 want_details = self.want.get("fabric_devices")[fabric_device_index]
                 if item.get("wireless_controller_settings"):
-                    have_wireless_controller_settings = have_details.get("wireless_controller_settings")
+                    have_wireless_controller_settings = have_details.get("wireless_controller_settings", None)
                     want_wireless_controller_settings = want_details.get("wireless_controller_settings")
                     enable = want_wireless_controller_settings.get("enable")
                     if enable:
