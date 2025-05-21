@@ -432,9 +432,10 @@ notes:
     - Border + Control Plane + Edge + Wireless Controller (B+CP+E+WC)
     - Border + Control Plane + Wireless Controller (B+CP+WC)
     - Edge + Wireless Controller (E+WC)
-  - The 9800-SW image is required to enable wireless controller capabilities on this switch.
-    Once the 9800-SW image has been distributed and activated, please resync the device before completing
-    the Embedded Wireless LAN Controller workflow.
+  - The 9800-SW image is required to enable wireless controller capabilities on the switch.
+    Before using the Embedded Wireless LAN Controller settings, ensure the image has been distributed and activated, and the
+    device has been resynced.
+    The SWIM Workflow Manager module can be used to perform the image distribution and activation.
   - A maximum of two devices can have Embedded Wireless Controller Capabilities in the fabric.
   - SDK Method used are site_design.SiteDesign.get_sites, network_settings.NetworkSettings.get_reserve_ip_subpool,
     devices.Devices.get_device_list, sda.Sda.get_transit_networks, sda.Sda.get_layer3_virtual_networks,
