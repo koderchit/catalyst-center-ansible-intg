@@ -2521,11 +2521,10 @@ class FabricMulticast(DnacBase):
         # Check for conflicting replication mode within the same fabric
         self.log("Starting to build replication mode conflict check list.", "DEBUG")
 
-        self.log(fabric_multicast)
-        self.fail_and_exit("EHELLOOO")
         to_check_for_replication_mode_conflicts = []
         for index, multicast_config in enumerate(fabric_multicast):
             self.log(f"Processing fabric_multicast index {index}: {multicast_config}", "DEBUG")
+
             replication_params = copy.deepcopy(self.want.get("fabric_multicast")[index].get("replication_mode_details"))
             self.log(f"replication_mode_details at index {index}: {replication_params}", "DEBUG")
 
