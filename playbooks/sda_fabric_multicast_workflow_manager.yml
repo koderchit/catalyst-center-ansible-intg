@@ -1,0 +1,104 @@
+---
+- name: Configure multicast in the SDA Fabric
+  hosts: dnac_servers
+  vars_files:
+    - credentials.yml
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Configure the SDA multicast on a L3 virtual network under a fabric site
+      cisco.dnac.sda_fabric_multicast_workflow_manager:
+        dnac_host: "{{ dnac_host }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_log: true
+        dnac_log_level: "{{ dnac_log_level }}"
+        dnac_log_append: false
+        state: deleted
+        config_verify: true
+        config:
+          - fabric_multicast:
+            - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+              layer3_virtual_network: Multicast_ipv6
+              replication_mode: HEADEND_REPLICATION
+              ip_pool_name: Chennai_multicast_ipv6
+              # ssm:
+              #   ipv4_ssm_ranges:
+              #     - 232.0.0.0/8
+              asm:
+                - rp_device_location: "FABRIC"
+                  network_device_ips:
+                    - "206.1.2.3"
+                  ipv4_asm_ranges:
+                    - "228.0.0.0/8"
+                - rp_device_location: "EXTERNAL"
+                  ex_rp_ipv4_address: "206.1.2.1"
+                  ipv4_asm_ranges:
+                    - "227.0.0.0/8"
+
+              # - fabric_name: "Global/Site_India/Tamil_Nadu/Chennai"
+              #   layer3_virtual_network: "Multicast_ipv6"
+              #   # replication_mode: HEADEND_REPLICATION
+              #   # ip_pool_name: Chennai_multicast_ipv6
+              #   # ssm:
+              #   #   ipv4_ssm_ranges:
+              #   #     - 236.0.0.0/8
+              #   # asm:
+              #   #   - rp_device_location: "EXTERNAL"
+              #   #     ex_rp_ipv4_address: "206.1.2.1"
+              #   #     ipv4_asm_ranges:
+              #   #       - "226.0.0.0/8"
+              #   #     ipv6_asm_ranges:
+              #   #       - "FF00:1000:1000:1001::/64"
+              #   #   - rp_device_location: "FABRIC"
+              #   #     network_device_ips:
+              #   #       - "206.1.2.3"
+              #   #     ipv4_asm_ranges:
+              #   #       - "227.0.0.0/8"
+
+
+# ---
+# - name: Configure multicast in the SDA Fabric
+#   hosts: dnac_servers
+#   vars_files:
+#     - credentials.yml
+#   gather_facts: false
+#   connection: local
+#   tasks:
+#     - name: Configure the SDA multicast on a L3 virtual network under a fabric site
+#       cisco.dnac.sda_fabric_multicast_workflow_manager:
+#         dnac_host: "{{ dnac_host }}"
+#         dnac_username: "{{ dnac_username }}"
+#         dnac_password: "{{ dnac_password }}"
+#         dnac_verify: "{{ dnac_verify }}"
+#         dnac_port: "{{ dnac_port }}"
+#         dnac_version: "{{ dnac_version }}"
+#         dnac_debug: "{{ dnac_debug }}"
+#         dnac_log: true
+#         dnac_log_level: "{{ dnac_log_level }}"
+#         dnac_log_append: false
+#         state: deleted
+#         config_verify: true
+#         config:
+#           - fabric_multicast:
+#             - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+#               layer3_virtual_network: Multicast_ipv6
+#               # replication_mode: HEADEND_REPLICATION
+#               # ip_pool_name: Chennai_multicast_ipv6
+#               # ssm:
+#               #   ipv4_ssm_ranges:
+#               #     - 232.0.0.0/8
+#               # asm:
+#               #   - rp_device_location: "FABRIC"
+#               #     network_device_ips:
+#               #       - "206.1.2.3"
+#               #     ipv4_asm_ranges:
+#               #       - "228.0.0.0/8"
+#               #   - rp_device_location: "EXTERNAL"
+#               #     ex_rp_ipv4_address: "206.1.2.1"
+#               #     ipv4_asm_ranges:
+#               #       - "226.0.0.0/8"
