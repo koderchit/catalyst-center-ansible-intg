@@ -3302,13 +3302,15 @@ class FabricMulticast(DnacBase):
                 ),
                 "INFO",
             )
-            to_create_multicast_sorted_by_fabric_id = self.sort_payload_by_fabric_id(
+            to_create_multicast_grouped_by_fabric_id = self.group_payload_by_fabric_id(
                 to_create_multicast)
-            for fabric_id, to_create_multicast_configs in to_create_multicast_sorted_by_fabric_id.items():
+            self.log(
+                f"Total fabric ID groups to be created: {len(to_create_multicast_grouped_by_fabric_id)}",
+                "INFO",
+            )
+            for fabric_id, to_create_multicast_configs in to_create_multicast_grouped_by_fabric_id.items():
                 self.log(
-                    "Adding multicast configurations for fabric ID '{fabric_id}': {configs}".format(
-                        fabric_id=fabric_id, configs=to_create_multicast_configs
-                    ),
+                    f"Adding multicast configurations for fabric ID '{fabric_id}': {to_create_multicast_configs}",
                     "DEBUG",
                 )
                 self.bulk_add_multicast_config(to_create_multicast_configs).check_return_status()
@@ -3332,13 +3334,15 @@ class FabricMulticast(DnacBase):
                 ),
                 "INFO",
             )
-            to_update_multicast_sorted_by_fabric_id = self.sort_payload_by_fabric_id(
+            to_update_multicast_grouped_by_fabric_id = self.group_payload_by_fabric_id(
                 to_update)
-            for fabric_id, to_update_multicast_configs in to_update_multicast_sorted_by_fabric_id.items():
+            self.log(
+                f"Total fabric ID groups to be updated: {len(to_update_multicast_grouped_by_fabric_id)}",
+                "INFO",
+            )
+            for fabric_id, to_update_multicast_configs in to_update_multicast_grouped_by_fabric_id.items():
                 self.log(
-                    "Updating multicast configurations for fabric ID '{fabric_id}': {configs}".format(
-                        fabric_id=fabric_id, configs=to_update_multicast_configs
-                    ),
+                    f"Updating multicast configurations for fabric ID '{fabric_id}': {to_update_multicast_configs}",
                     "DEBUG",
                 )
                 self.bulk_update_multicast_config(to_update_multicast_configs).check_return_status()
@@ -3349,9 +3353,9 @@ class FabricMulticast(DnacBase):
         self.status = "success"
         return self
 
-    def sort_payload_by_fabric_id(self, payload_list):
+    def group_payload_by_fabric_id(self, payload_list):
         """
-        Sort the list of multicast payload dictionaries by 'fabricId'.
+        Group the list of multicast payload dictionaries by 'fabricId'.
 
         Parameters:
             payload_list (list of dict): List of dictionaries containing 'fabricId' keys.
@@ -3366,30 +3370,35 @@ class FabricMulticast(DnacBase):
             items specific to each fabric site in Cisco Catalyst Center.
             If the input is not a list of dictionaries or is empty, it returns an empty dictionary.
         """
-        self.log(f"Initializing sorting of multicast configs by 'fabricId': {payload_list}.", "INFO")
+        self.log(f"Initializing grouping of multicast configs by fabric ID: {payload_list}.", "INFO")
 
         if not isinstance(payload_list, list):
-            self.log("'payload_list' must be a list.", "ERROR")
+            self.log(f"Invalid input: 'payload_list' must be a list. Received: {type(payload_list).__name__}", "ERROR")
             return {}
 
         if not all(isinstance(item, dict) for item in payload_list):
-            self.log("All items in 'payload_list' must be dictionaries.", "ERROR")
+            self.log("Invalid input: All items in 'payload_list' must be dictionaries.", "ERROR")
             return {}
 
         if not payload_list:
-            self.msg = "'payload_list' is empty. Returning an empty dictionary."
+            self.log("'payload_list' is empty. Returning an empty dictionary.", "INFO")
             return {}
 
-        sorted_payload = {}
+        grouped_payload = {}
         for item in payload_list:
             fabric_id = item.get("fabricId")
-            if fabric_id not in sorted_payload:
-                sorted_payload[fabric_id] = []
-            sorted_payload[fabric_id].append(item)
+            if fabric_id is None:
+                self.log(f"Skipping item without fabric ID: {item}", "WARNING")
+                continue
+            if fabric_id not in grouped_payload:
+                self.log(f"New fabric ID found: {fabric_id}. Initializing grouping.", "DEBUG")
+                grouped_payload[fabric_id] = []
 
-        self.log(f"Sorted payload by fabricId: {self.pprint(sorted_payload)}", "DEBUG")
+            grouped_payload[fabric_id].append(item)
 
-        return sorted_payload
+        self.log(f"Completed grouping by fabric ID. Result: {self.pprint(grouped_payload)}", "DEBUG")
+
+        return grouped_payload
 
     def check_replication_mode_conflicts(self, fabric_list):
         """
