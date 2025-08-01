@@ -1,0 +1,460 @@
+---
+# - debug:
+#     msg= "Initializing SDA Fabric Workflow Management Test"
+# - debug:
+#     msg="Role Path {{ role_path }}"
+
+- block:
+  - name: Load variables and set Catalyst Center credentials
+    include_vars:
+      file: "{{ role_path }}/vars/vars_sda_fabric_multicast_management.yml"
+      name: vars_map
+    vars:
+      dnac_login: &dnac_login
+        dnac_host: "{{ dnac_host }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        config_verify: true
+
+  #############################################
+  #                Clean Up                   #
+  #############################################
+
+  - name: Remove existing multicast before test execution
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.cleanup_multicast }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+
+  # #############################################
+  # #                CREATE MULTICAST           #
+  # #############################################
+  - name: Create new multicast configurations
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.create_multicast }}"
+    register: result_create_multicast
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  # - name: Debug item
+  #   debug:
+  #     var: item
+  #   loop: "{{ result_create_multicast.results }}"
+  #   when: result_create_multicast is defined
+
+  # - name: Verify multicast creation success
+  #   assert:
+  #     that:
+  #       - item.changed == true
+  #       - "'created successfully' in item.msg"
+  #   loop: "{{ result_create_multicast.results }}"
+  #   when: result_create_multicast is defined
+
+  # ###############################################################
+  # #       UPDATE MULTICAST: ADDING FABRIC ASM IPV4              #
+  # ###############################################################
+
+  - name: Add fabric ASM IPv4 to existing multicast
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.update_multicast_add_fabric_asm_ipv4 }}"
+    register: result_update_multicast_add_fabric_asm_ipv4
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+
+  # - name: Debug item
+  #   debug:
+  #     var: item
+  #   loop: "{{ result_update_multicast_add_fabric_asm_ipv4.results }}"
+  #   when: result_update_multicast_add_fabric_asm_ipv4 is defined
+
+  # - name: Verify addition of fabric ASM IPv4
+  #   assert:
+  #     that:
+  #       - item.changed == true
+  #       - "'updated successfully' in item.response"
+  #   loop: "{{ result_update_multicast_add_fabric_asm_ipv4.results }}"
+  #   when: result_update_multicast_add_fabric_asm_ipv4 is defined
+
+
+  # ###############################################################
+  # #       UPDATE MULTICAST: ADDING EXTERNAL ASM IPV4            #
+  # ###############################################################
+
+  - name: Add external ASM IPv4 to existing multicast
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.update_multicast_add_external_asm_ipv4 }}"
+    register: result_update_multicast_add_external_asm_ipv4
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+
+  # - name: Debug item
+  #   debug:
+  #     var: item
+  #   loop: "{{ result_update_multicast_add_external_asm_ipv4.results }}"
+  #   when: result_update_multicast_add_external_asm_ipv4 is defined
+
+  # - name: Verify addition of external ASM IPv4
+  #   assert:
+  #     that:
+  #       - item.changed == true
+  #       - "'updated successfully' in item.response"
+  #   loop: "{{ result_update_multicast_add_external_asm_ipv4.results }}"
+  #   when: result_update_multicast_add_external_asm_ipv4 is defined
+
+
+  # ###############################################################
+  # #       UPDATE MULTICAST: UPDATING FABRIC ASM IPV6            #
+  # ###############################################################
+
+  - name: Update fabric ASM IPv6 in existing multicast
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.update_multicast_update_fabric_asm_ipv6 }}"
+    register: result_update_multicast_update_fabric_asm_ipv6
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  # - name: Debug item
+  #   debug:
+  #     var: item
+  #   loop: "{{ result_update_multicast_update_fabric_asm_ipv6.results }}"
+  #   when: result_update_multicast_update_fabric_asm_ipv6 is defined
+
+  # - name: Verify updating of fabric ASM IPv6
+  #   assert:
+  #     that:
+  #       - item.changed == true
+  #       - "'updated successfully' in item.response"
+  #   loop: "{{ result_update_multicast_update_fabric_asm_ipv6.results }}"
+  #   when: result_update_multicast_update_fabric_asm_ipv6 is defined
+
+  # ###############################################################
+  # #       UPDATE MULTICAST: UPDATING EXTERNAL ASM IPV4          #
+  # ###############################################################
+
+  - name: Update external ASM IPv6 in existing multicast
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.update_multicast_update_external_asm_ipv4 }}"
+    register: result_update_multicast_update_external_asm_ipv4
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  # - name: Debug item
+  #   debug:
+  #     var: item
+  #   loop: "{{ result_update_multicast_update_external_asm_ipv4.results }}"
+  #   when: result_update_multicast_update_external_asm_ipv4 is defined
+
+  # - name: Verify updating of external ASM IPv6
+  #   assert:
+  #     that:
+  #       - item.changed == true
+  #       - "'updated successfully' in item.response"
+  #   loop: "{{ result_update_multicast_update_external_asm_ipv4.results }}"
+  #   when: result_update_multicast_update_external_asm_ipv4 is defined
+
+  # ###############################################################
+  # #       UPDATE MULTICAST: DELETE MULTICAST                    #
+  # ###############################################################
+
+  - name: DELETE existing multicast
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+          - "{{ item }}"
+    loop: "{{ vars_map.delete_multicast }}"
+    register: result_delete_multicast
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  # - name: Debug item
+  #   debug:
+  #     var: item
+  #   loop: "{{ result_delete_multicast.results }}"
+  #   when: result_delete_multicast is defined
+
+  # - name: Verify addition of Multicast
+  #   assert:
+  #     that:
+  #       - item.changed == true
+  #       - "'updated successfully' in item.response"
+  #   loop: "{{ result_delete_multicast.results }}"
+  #   when: result_delete_multicast is defined
+
+
+
+
+  #############################################
+  # RESET before: delete_asm_fabric_rp_ipv4_single_range
+  #############################################
+
+  - name: Reset multicast to test delete (for fabric RP IPv4 single range)
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.reset_multicast_to_test_delete }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM fabric RP IPv4 single range
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_fabric_rp_ipv4_single_range }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # DELETE ASM: FABRIC RP entire IPv4 range
+  #############################################
+
+  - name: Delete ASM fabric RP IPv4 entire range
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_fabric_rp_ipv4_entire_range }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # RESET before: delete_asm_fabric_rp_entire_network_device_ips
+  #############################################
+
+  - name: Reset multicast to test delete (for fabric RP entire network_device_ips)
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.reset_multicast_to_test_delete }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM fabric RP entire network device IPs
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_fabric_rp_entire_network_device_ips }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # RESET before: delete_asm_fabric_rp
+  #############################################
+
+  - name: Reset multicast to test delete (for fabric RP delete)
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.reset_multicast_to_test_delete }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM fabric RP
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_fabric_rp }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # RESET before: delete_asm_external_rp_single_ip6_range
+  #############################################
+
+  - name: Reset multicast to test delete (for external RP single IPv6 range)
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.reset_multicast_to_test_delete }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM external RP single IPv6 range
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_external_rp_single_ip6_range }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM external RP entire IPv6 range
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_external_rp_entire_ipv6_range }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # DELETE ASM: EXTERNAL RP single IPv4 range
+  #############################################
+
+  - name: Delete ASM external RP single IPv4 range
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_external_rp_single_ip4_range }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM external RP entire IPv4 range
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_external_rp_entire_ipv4_range }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # RESET before: delete_asm_external_ipv4_rp
+  #############################################
+
+  - name: Reset multicast to test delete (for external IPv4 RP)
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.reset_multicast_to_test_delete }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM external IPv4 RP
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_external_ipv4_rp }}"
+
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  #############################################
+  # RESET before: delete_asm_external_ipv6_rp
+  #############################################
+
+  - name: Reset multicast to test delete (for external IPv6 RP)
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.reset_multicast_to_test_delete }}"
+
+  - name: Wait for 20 seconds
+    pause:
+      seconds: 20
+
+  - name: Delete ASM external IPv6 RP
+    cisco.dnac.sda_fabric_multicast_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.delete_asm_external_ipv6_rp }}"

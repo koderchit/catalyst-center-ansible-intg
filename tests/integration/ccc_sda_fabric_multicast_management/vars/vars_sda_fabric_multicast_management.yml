@@ -1,0 +1,265 @@
+# ---
+cleanup_multicast:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+
+create_multicast:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      ssm:
+        ipv4_ssm_ranges:
+          - 232.0.0.0/8
+
+update_multicast_add_fabric_asm_ipv4:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv4_asm_ranges:
+            - "229.0.0.0/8"
+
+update_multicast_add_external_asm_ipv4:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv4_address: "206.1.2.1"
+          ipv4_asm_ranges:
+            - "226.0.0.0/8"
+
+update_multicast_update_fabric_asm_ipv6:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv6_asm_ranges:
+            - FF00:1000:1000:1000::/64
+            - FF00:1000:1000:2000::/64
+
+update_multicast_update_external_asm_ipv4:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv4_address: "206.1.2.1"
+          ipv4_asm_ranges:
+            - "227.0.0.0/8"
+            - "228.0.0.0/8"
+
+delete_multicast:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+
+
+reset_multicast_to_test_delete:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      ssm:
+        ipv4_ssm_ranges:
+          - 232.0.0.0/8
+          - 233.0.0.0/8
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv4_asm_ranges:
+            - "227.0.0.0/8"
+            - "228.0.0.0/8"
+          ipv6_asm_ranges:
+            - "FF00:1000:1000:1000::/64"
+            - "FF00:2000:1000:1000::/64"
+
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv4_address: "204.1.2.3"
+          ipv4_asm_ranges:
+            - "229.0.0.0/8"
+            - "230.0.0.0/8"
+
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv6_address: "2001:420:c0d4:1001::40"
+          ipv6_asm_ranges:
+            - "FF00:3000:1000:1000::/64"
+            - "FF00:4000:1000:1000::/64"
+
+
+delete_asm_fabric_rp_ipv4_single_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv4_asm_ranges:
+            - "227.0.0.0/8"
+
+delete_asm_fabric_rp_ipv4_entire_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv4_asm_ranges:
+            - "227.0.0.0/8"
+            - "228.0.0.0/8"
+
+delete_asm_fabric_rp_ipv6_single_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv6_asm_ranges:
+            - "FF00:1000:1000:1000::/64"
+
+delete_asm_fabric_rp_ipv6_single_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+          ipv6_asm_ranges:
+            - "FF00:1000:1000:1000::/64"
+            - "FF00:4000:1000:1000::/64"
+
+
+#  reset
+
+
+delete_asm_fabric_rp_entire_network_device_ips:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+          network_device_ips:
+            - "206.1.2.3"
+
+# Reset
+
+
+delete_asm_fabric_rp:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "FABRIC"
+
+# Reset
+
+delete_asm_external_rp_single_ip6_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv6_address: "2001:420:c0d4:1001::40"
+          ipv6_asm_ranges:
+            - "FF00:3000:1000:1000::/64"
+
+delete_asm_external_rp_entire_ipv6_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv6_address: "2001:420:c0d4:1001::40"
+          ipv6_asm_ranges:
+            - "FF00:3000:1000:1000::/64"
+            - "FF00:4000:1000:1000::/64"
+
+delete_asm_external_rp_single_ip4_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv4_address: "204.1.2.3"
+          ipv4_asm_ranges:
+            - "229.0.0.0/8"
+
+delete_asm_external_rp_entire_ipv4_range:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv4_address: "204.1.2.3"
+          ipv4_asm_ranges:
+            - "229.0.0.0/8"
+            - "230.0.0.0/8"
+
+#  Reset
+
+
+delete_asm_external_ipv4_rp:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv4_address: "204.1.2.3"
+
+delete_asm_external_ipv6_rp:
+  - fabric_multicast:
+    - fabric_name: Global/Site_India/Tamil_Nadu/Chennai
+      layer3_virtual_network: Multicast_ipv6
+      replication_mode: HEADEND_REPLICATION
+      ip_pool_name: Chennai_multicast_ipv6
+      asm:
+        - rp_device_location: "EXTERNAL"
+          ex_rp_ipv6_address: "2001:420:c0d4:1001::40"
+
+
