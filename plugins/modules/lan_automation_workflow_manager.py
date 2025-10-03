@@ -316,43 +316,43 @@ options:
         elements: dict
         suboptions:
           source_device_management_ip_address:
-            description:
+            description: >
               - Management IP address of the source device.
               - The device must be LAN Automated, in Reachable and Managed state in Cisco Catalyst Center inventory.
             type: str
             required: false
           source_device_mac_address:
-            description:
+            description: >
               - MAC address of the source device.
               - The device must be LAN Automated, in Reachable and Managed state in Cisco Catalyst Center inventory.
             type: str
             required: false
           source_device_serial_number:
-            description:
+            description: >
               - Serial number of the source device.
               - The device must be LAN Automated, in Reachable and Managed state in Cisco Catalyst Center inventory.
             type: str
             required: false
           destination_device_management_ip_address:
-            description:
+            description: >
               - Management IP address of the destination device.
               - The device must be LAN Automated, in Reachable and Managed state in Cisco Catalyst Center inventory.
             type: str
             required: false
           destination_device_mac_address:
-            description:
+            description: >
               - MAC address of the destination device.
               - The device must be LAN Automated, in Reachable and Managed state in Cisco Catalyst Center inventory.
             type: str
             required: false
           destination_device_serial_number:
-            description:
+            description: >
               - Serial number of the destination device.
               - The device must be LAN Automated, in Reachable and Managed state in Cisco Catalyst Center inventory.
             type: str
             required: false
           port_channel_number:
-            description:
+            description: >
               - Unique identifier for the Port Channel, assigned automatically by
                 Catalyst Center when the Port Channel is created.
               - Cannot be specified during creation.
@@ -361,7 +361,7 @@ options:
             type: int
             required: false
           links:
-            description:
+            description: >
               - List of LAN Automated links to add, update, or remove from the Port
                 Channel.
               - Mandatory for create and update operations.
@@ -369,7 +369,7 @@ options:
             elements: dict
             suboptions:
               source_port:
-                description:
+                description: >
                   - Interface name on the source device.
                 type: str
                 required: true
@@ -408,26 +408,49 @@ notes:
     the playbook will keep running
     until the state of the device is active or reached
     the timeout value.
-  - Both source and destination devices must be LAN Automated devices in the Reachable and Managed state in Cisco Catalyst Center inventory.
-  - For the source device, at least one of `source_device_management_ip_address`, `source_device_mac_address`, or `source_device_serial_number` is required.
-  - For the destination device, at least one of `destination_device_management_ip_address`, `destination_device_mac_address`, or `destination_device_serial_number` must be
-    provided when performing create or update operations, and is recommended when targeting a specific Port Channel for deletion.
-  - If more than one identifier is provided for either source or destination, the order of precedence is: `*_serial_number` > `*_management_ip_address` > `*_mac_address`.
-  - A Port Channel must have between 2 and 8 links. Creation or update operations will fail if the resulting Port Channel would have fewer than 2 or more than 8 links.
-  - When updating a Port Channel, at least one existing link must be provided to identify the Port Channel between the same endpoints (unless port_channel_number is specified).
-  - port_channel_number is optional and can be used to update or delete a specific Port Channel without specifying existing links. If both links and port_channel_number are
-    provided, the port_channel_number will be used to identify the Port Channel.
-  - Links from different Port Channels cannot be mixed during an update. A link can belong to only one Port Channel.
-  - The terms "source" and "destination" are for input consistency only. Both devices are equal peers in the Port Channel.
+  - Both source and destination devices must be LAN Automated
+    devices in the Reachable and Managed state in Cisco
+    Catalyst Center inventory.
+  - For the source device, at least one of
+    'source_device_management_ip_address', 'source_device_mac_address',
+    or 'source_device_serial_number' is required.
+  - For the destination device, at least one of
+    'destination_device_management_ip_address',
+    'destination_device_mac_address', or
+    'destination_device_serial_number' must be provided when performing
+    create or update operations, and is recommended when targeting a
+    specific Port Channel for deletion.
+  - If more than one identifier is provided for either source or
+    destination, the order of precedence is -
+    '*_serial_number' > '*_management_ip_address' > '*_mac_address'.
+  - A Port Channel must have between 2 and 8 links.
+    Creation or update operations will fail if the resulting Port Channel
+    would have fewer than 2 or more than 8 links.
+  - When updating a Port Channel, at least one existing link must
+    be provided to identify the Port Channel between the same
+    endpoints (unless port_channel_number is specified).
+  - port_channel_number is optional and can be used to update or delete
+    a specific Port Channel without specifying existing links.
+    If both links and port_channel_number are provided,
+    the port_channel_number will be used to identify the Port Channel.
+  - Links from different Port Channels cannot be mixed during an update.
+    A link can belong to only one Port Channel.
+  - The terms "source" and "destination" are for input consistency only.
+    Both devices are equal peers in the Port Channel.
 
   - 'Deletion rules (When deleting a Port Channel, links are not provided) - '
-  - "* If port_channel_number is provided, only that specific Port Channel will be deleted."
-  - "* If both endpoints are provided, only the Port Channels between them will be deleted."
-  - "* If only one endpoint is provided (the source device), all Port Channels from that source device will be deleted."
+  - "* If port_channel_number is provided, only that specific Port Channel
+    will be deleted."
+  - "* If both endpoints are provided, only the Port Channels between them
+    will be deleted."
+  - "* If only one endpoint is provided (the source device), all Port
+    Channels from that source device will be deleted."
 
   - 'Deletion rules (When deleting links) - '
-  - "* Removing all links from a Port Channel will delete the Port Channel itself."
-  - "* If fewer than two links remain after deletion, the workflow will fail (Port Channel requires ≥2 links)."
+  - "* Removing all links from a Port Channel will delete the Port Channel
+    itself."
+  - "* If fewer than two links remain after deletion, the workflow will
+    fail (Port Channel requires ≥2 links)."
 
   - SDK Method used are
     ccc_lan_automation.lanautomation.lan_automation_start_v2
@@ -446,6 +469,7 @@ notes:
     lan_automation.LanAutomation.remove_a_link_from_port_channel
     devices.Devices.get_device_list
 """
+
 EXAMPLES = r"""
 ---
 - name: Start a LAN Automation session without waiting
@@ -706,14 +730,14 @@ EXAMPLES = r"""
     config:
     - port_channel:
         - source_device_management_ip_address: 10.1.1.1
-            destination_device_management_ip_address: 20.1.1.1
-            links:
-              # Existing link already part of the Port Channel
-              - source_port: GigabitEthernet1/0/1
-                destination_port: GigabitEthernet2/0/1
-              # New link to be added
-              - source_port: GigabitEthernet1/0/10
-                destination_port: GigabitEthernet2/0/10
+          destination_device_management_ip_address: 20.1.1.1
+          links:
+            # Existing link already part of the Port Channel
+            - source_port: GigabitEthernet1/0/1
+              destination_port: GigabitEthernet2/0/1
+            # New link to be added
+            - source_port: GigabitEthernet1/0/10
+              destination_port: GigabitEthernet2/0/10
 
 - name: Update a Port Channel using port_channel_number
 # No need to specify existing links when port_channel_number is provided.
@@ -769,10 +793,10 @@ EXAMPLES = r"""
     config:
     - port_channel:
         - source_device_management_ip_address: 10.1.1.1
-            destination_device_management_ip_address: 20.1.1.1
-            links:
-              - source_port: GigabitEthernet1/0/1
-                destination_port: GigabitEthernet2/0/1            # This link will be removed from its associated Port Channel.
+          destination_device_management_ip_address: 20.1.1.1
+          links:
+            - source_port: GigabitEthernet1/0/1
+              destination_port: GigabitEthernet2/0/1            # This link will be removed from its associated Port Channel.
 
 - name: Delete an entire Port Channel between two devices by specifying all the links
   cisco.dnac.lan_automation_workflow_manager:
@@ -789,14 +813,14 @@ EXAMPLES = r"""
     config:
     - port_channel:
         - source_device_management_ip_address: 10.1.1.1
-            destination_device_management_ip_address: 20.1.1.1
-            links:
-              - source_port: GigabitEthernet1/0/1
-                destination_port: GigabitEthernet2/0/1
-              - source_port: GigabitEthernet1/0/2
-                destination_port: GigabitEthernet2/0/2
-              - source_port: GigabitEthernet1/0/3
-                destination_port: GigabitEthernet2/0/3
+          destination_device_management_ip_address: 20.1.1.1
+          links:
+            - source_port: GigabitEthernet1/0/1
+              destination_port: GigabitEthernet2/0/1
+            - source_port: GigabitEthernet1/0/2
+              destination_port: GigabitEthernet2/0/2
+            - source_port: GigabitEthernet1/0/3
+              destination_port: GigabitEthernet2/0/3
 
 - name: Delete an entire Port Channel between two devices by specifying the port_channel_number
   cisco.dnac.lan_automation_workflow_manager:
@@ -1222,7 +1246,8 @@ class LanAutomation(DnacBase):
 
         Parameters:
             source_device_management_ip_address (str): Management IP address of the source device.
-            destination_device_management_ip_address (str): Management IP address of the destination device. If None, retrieves Port Channels from the source device to all connected devices.
+            destination_device_management_ip_address (str): Management IP address of the destination device. If None,
+                        retrieves Port Channels from the source device to all connected devices.
             port_channel_number (int): Specific Port Channel number to filter results. If None, returns all Port Channels between the devices.
 
         Returns:
@@ -1533,7 +1558,8 @@ class LanAutomation(DnacBase):
                             f"[Config {idx}] port_channel_number provided, keeping all fetched configs.",
                             "INFO",
                         )
-                        have_port_channel_config = formatted_port_channel_config_list  # if formatted_port_channel_config_list is not empty and port_channel_number is provided, there should be only one config in the list.
+                        have_port_channel_config = formatted_port_channel_config_list
+                        # if formatted_port_channel_config_list is not empty and port_channel_number is provided, there should be only one config in the list.
                         self.log(
                             f"[Config {idx}] Matching configs: {self.pprint(have_port_channel_config)}",
                             "DEBUG",
@@ -1582,7 +1608,8 @@ class LanAutomation(DnacBase):
                                 )
                             )
                             self.msg = (
-                                f"[Config {idx}] Links provided in playbooks belongs to multiple existing Port Channel configurations: {self.pprint(formatted_port_channel_config_list)}."
+                                f"[Config {idx}] Links provided in playbooks belongs to multiple existing Port "
+                                f"Channel configurations: {self.pprint(formatted_port_channel_config_list)}."
                                 f"Matching indices: {matched_config_indices}"
                             )
                             self.fail_and_exit(self.msg)
@@ -2064,7 +2091,10 @@ class LanAutomation(DnacBase):
                     "DEBUG",
                 )
         else:
-            self.msg = f"None of 'management_ip_address', 'mac_address' or 'serial_number' are provided for the {device_type} device. Atleast one of them is required."
+            self.msg = (
+                f"None of 'management_ip_address', 'mac_address' or 'serial_number' "
+                f"are provided for the {device_type} device. Atleast one of them is required."
+            )
             self.fail_and_exit(self.msg)
 
         return ip_address
@@ -2226,7 +2256,8 @@ class LanAutomation(DnacBase):
                     ]
                 ):
                     self.log(
-                        f"[PortChannel {idx}] Any of destination_device_management_ip_address, destination_device_mac_address or destination_device_serial_number are "
+                        f"[PortChannel {idx}] Any of destination_device_management_ip_address, "
+                        "destination_device_mac_address or destination_device_serial_number are "
                         "not provided, all port channels from source device will be deleted",
                         "INFO",
                     )
@@ -2265,7 +2296,8 @@ class LanAutomation(DnacBase):
                     )
                 else:
                     self.log(
-                        f"[PortChannel {idx}] port_channel_number provided: '{port_channel_number}'. If no Port Channel exists between these endpoints, this value will be ignored. "
+                        f"[PortChannel {idx}] port_channel_number provided: '{port_channel_number}'. "
+                        "If no Port Channel exists between these endpoints, this value will be ignored. "
                         "Specify port_channel_number only when updating or deleting an existing Port Channel.",
                         "INFO",
                     )
@@ -3414,13 +3446,34 @@ class LanAutomation(DnacBase):
             function `_build_port_channel_messages`.
         """
         message_map = {
-            "port_channel_created": "Port channel created successfully between source device '{source}' and destination device '{destination}' with links: {links}.",
-            "port_channel_deleted": "Port channel deleted successfully between source device '{source}' and destination device '{destination}' with links: {links}.",
-            "no_port_channel_deleted": "No port channel found to delete between source device '{source}' and destination device '{destination}' with links: {links}. No update needed.",
-            "link_added_to_port_channel": "Links added successfully to the port channel between source device '{source}' and destination device '{destination}'. Added links: {links}.",
-            "link_not_added_to_port_channel": "Links were not added to the port channel between source device '{source}' and destination device '{destination}' as they already exist. Links: {links}.",
-            "link_removed_from_port_channel": "Links removed successfully from the port channel between source device '{source}' and destination device '{destination}'. Removed links: {links}.",
-            "link_not_removed_from_port_channel": "Links were not removed from the port channel between source device '{source}' and destination device '{destination}' as they do not exist. Links: {links}.",
+            "port_channel_created": (
+                "Port channel created successfully between source device '{source}' "
+                "and destination device '{destination}' with links: {links}."
+            ),
+            "port_channel_deleted": (
+                "Port channel deleted successfully between source device '{source}' "
+                "and destination device '{destination}' with links: {links}."
+            ),
+            "no_port_channel_deleted": (
+                "No port channel found to delete between source device '{source}' "
+                "and destination device '{destination}' with links: {links}. No update needed."
+            ),
+            "link_added_to_port_channel": (
+                "Links added successfully to the port channel between source device '{source}' "
+                "and destination device '{destination}'. Added links: {links}."
+            ),
+            "link_not_added_to_port_channel": (
+                "Links were not added to the port channel between source device '{source}' "
+                "and destination device '{destination}' as they already exist. Links: {links}."
+            ),
+            "link_removed_from_port_channel": (
+                "Links removed successfully from the port channel between source device '{source}' "
+                "and destination device '{destination}'. Removed links: {links}."
+            ),
+            "link_not_removed_from_port_channel": (
+                "Links were not removed from the port channel between source device '{source}' "
+                "and destination device '{destination}' as they do not exist. Links: {links}."
+            ),
         }
 
         result_msg_list = []
@@ -3696,23 +3749,29 @@ class LanAutomation(DnacBase):
             )
 
             if not have_port_channel_configs:
-                self.msg = f"Port channel configuration verification failed at index '{i}'. No existing port channel configuration found. Expected port channel to be created but it doesn't exist."
+                self.msg = (
+                    f"Port channel configuration verification failed at index '{i}'. "
+                    "No existing port channel configuration found. Expected port channel to be created but it doesn't exist."
+                )
                 self.fail_and_exit(self.msg)
             else:
                 self.log(
                     "Existing port channel configuration found. Verifying if updates were applied.",
                     "DEBUG",
                 )
-                have_port_channel_config = have_port_channel_configs[
-                    0
-                ]  #  In case of merged, there'll only one config if it exists.
+                #  In case of merged, there'll only one config if it exists.
+                have_port_channel_config = have_port_channel_configs[0]
                 needs_update, updated_port_channel_config = (
                     self.port_channel_config_needs_update(
                         want_port_channel_config, have_port_channel_config
                     )
                 )
                 if needs_update:
-                    self.msg = f"Port channel configuration verification failed at index '{i}'. Configuration needs update but expected it to be already updated. Config that needs update: {self.pprint(updated_port_channel_config)}"
+                    self.msg = (
+                        f"Port channel configuration verification failed at index '{i}'. "
+                        f"Configuration needs update but expected it to be already updated. "
+                        f"Config that needs update: {self.pprint(updated_port_channel_config)}"
+                    )
                     self.fail_and_exit(self.msg)
                 else:
                     self.log(
@@ -4261,8 +4320,11 @@ class LanAutomation(DnacBase):
             self.msg = f"Unable to retrieve the task_id for the task '{task_name}' for the port channel'."
             self.fail_and_exit(self.msg)
 
+        success_msg = (
+            f"Port channel between the source device '{source_device_management_ip}' and "
+            f"destination device '{destination_device_management_ip}' created successfully."
+        )
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
-        success_msg = f"Port channel between the source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}' created successfully."
         self.log(
             f"Port channel creation process completed for devices: {source_device_management_ip} -> {destination_device_management_ip}",
             "INFO",
@@ -4301,7 +4363,8 @@ class LanAutomation(DnacBase):
             "destinationDeviceManagementIPAddress"
         )
         self.log(
-            f"Initiating update of port channel between source device: '{source_device_management_ip}' and destination device: '{destination_device_management_ip}' with config: {self.pprint(port_channel_config)}",
+            f"Initiating update of port channel between source device: '{source_device_management_ip}' and "
+            f"destination device: '{destination_device_management_ip}' with config: {self.pprint(port_channel_config)}",
             "INFO",
         )
 
@@ -4326,10 +4389,16 @@ class LanAutomation(DnacBase):
             "lan_automation", task_name, update_port_channel_payload
         )
         if not task_id:
-            self.msg = f"Unable to retrieve the task_id for the task '{task_name}' for the port channel between the source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}''."
+            self.msg = (
+                f"Unable to retrieve the task_id for the task '{task_name}' for the port channel "
+                f"between the source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}''."
+            )
             self.fail_and_exit(self.msg)
 
-        success_msg = f"Port channel between the source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}' updated successfully with links: {self.pprint(port_channel_config.get("links"))}."
+        success_msg = (
+            f"Port channel between the source device '{source_device_management_ip}' and "
+            f"destination device '{destination_device_management_ip}' updated successfully with links: {self.pprint(port_channel_config.get('links'))}."
+        )
 
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
         self.log(
@@ -4387,9 +4456,8 @@ class LanAutomation(DnacBase):
                     "Existing port channel configuration found. Checking for updates.",
                     "DEBUG",
                 )
-                have_port_channel_config = have_port_channel_configs[
-                    0
-                ]  #  In case of merged, there'll only one config if it exists.
+                have_port_channel_config = have_port_channel_configs[0]
+                #  In case of merged, there'll only one config if it exists.
                 needs_update, updated_port_channel_config = (
                     self.port_channel_config_needs_update(
                         want_port_channel_config, have_port_channel_config
@@ -5666,7 +5734,10 @@ class LanAutomation(DnacBase):
             self.msg = f"Unable to retrieve the task_id for the task '{task_name}' for the port channel'."
             self.fail_and_exit(self.msg)
 
-        success_msg = f"Port channel between the source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}' deleted successfully."
+        success_msg = (
+            f"Port channel between the source device '{source_device_management_ip}' and "
+            f"destination device '{destination_device_management_ip}' deleted successfully."
+        )
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
         self.port_channel_deleted.append(port_channel_config)
         return self
@@ -5704,7 +5775,8 @@ class LanAutomation(DnacBase):
         )
 
         self.log(
-            f"Initiating deletion of links from port channel between source device: '{source_device_management_ip}' and destination device: '{destination_device_management_ip}",
+            f"Initiating deletion of links from port channel between source device: '{source_device_management_ip}' "
+            f"and destination device: '{destination_device_management_ip}",
             "DEBUG",
         )
 
@@ -5732,7 +5804,10 @@ class LanAutomation(DnacBase):
             self.msg = f"Unable to retrieve the task_id for the task '{task_name}' for the port channel'."
             self.fail_and_exit(self.msg)
 
-        success_msg = f"Links from port channel between the source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}' deleted successfully."
+        success_msg = (
+            f"Links from port channel between the source device '{source_device_management_ip}' "
+            f"and destination device '{destination_device_management_ip}' deleted successfully."
+        )
 
         self.get_task_status_from_tasks_by_id(task_id, task_name, success_msg)
         self.link_removed_from_port_channel.append(port_channel_config)
@@ -5808,7 +5883,9 @@ class LanAutomation(DnacBase):
 
             if links:
                 self.log(
-                    f"Links are provided in the configuration for deletion. Processing link deletion for source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}'. Links: {self.pprint(links)}",
+                    f"Links are provided in the configuration for deletion. "
+                    f"Processing link deletion for source device '{source_device_management_ip}' "
+                    f"and destination device '{destination_device_management_ip}'. Links: {self.pprint(links)}",
                     "DEBUG",
                 )
                 have_port_channel_config = have_port_channel_config_list[0]
@@ -5825,14 +5902,16 @@ class LanAutomation(DnacBase):
             elif destination_device_management_ip:
                 self.log(
                     "Destination device management IP is provided without specific links or port channel number. "
-                    f"Deleting all the port channel between the source device: '{source_device_management_ip}' and destination device: '{destination_device_management_ip}'.",
+                    f"Deleting all the port channel between the source device: '{source_device_management_ip}' "
+                    f"and destination device: '{destination_device_management_ip}'.",
                     "DEBUG",
                 )
                 for have_port_channel_config in have_port_channel_config_list:
                     self.process_delete_port_channel(have_port_channel_config)
             else:
                 self.log(
-                    f"No links, port channel number, or destination device provided. Deleting all port channels associated with source device '{source_device_management_ip}'",
+                    f"No links, port channel number, or destination device provided. "
+                    f"Deleting all port channels associated with source device '{source_device_management_ip}'",
                     "DEBUG",
                 )
                 for have_port_channel_config in have_port_channel_config_list:
@@ -5968,11 +6047,16 @@ class LanAutomation(DnacBase):
                     "DEBUG",
                 )
                 have_port_channel_config = have_port_channel_config_list[0]
-                needs_update, _ = self.port_channel_config_needs_update(
-                    want_port_channel_config, have_port_channel_config
+                needs_update, updated_port_channel_config = (
+                    self.port_channel_config_needs_update(
+                        want_port_channel_config, have_port_channel_config
+                    )
                 )
                 if needs_update:
-                    self.msg = f"Port channel verification failed at index '{i}'. Links that should have been deleted are still present: {self.pprint(have_port_channel_config.get('links'))}"
+                    self.msg = (
+                        f"Port channel verification failed at index '{i}'. "
+                        f"Links that should have been deleted are still present: {self.pprint(have_port_channel_config.get('links'))}"
+                    )
                     self.fail_and_exit(self.msg)
                 else:
                     self.log(
@@ -5984,24 +6068,37 @@ class LanAutomation(DnacBase):
                     f"Port channel number provided: '{port_channel_number}'. Verifying deletion.",
                     "DEBUG",
                 )
-                self.msg = f"Port channel verification failed at index '{i}'. Port channel with number '{port_channel_number}' should have been deleted but still exists. Source IP: '{source_device_management_ip}', Destination IP: '{destination_device_management_ip}', Existing details: {self.pprint(have_port_channel_config_list)}"
+                self.msg = (
+                    f"Port channel verification failed at index '{i}'. Port channel with number '{port_channel_number}' should "
+                    f"have been deleted but still exists. Source IP: '{source_device_management_ip}', "
+                    f"Destination IP: '{destination_device_management_ip}', Existing details: {self.pprint(have_port_channel_config_list)}"
+                )
                 self.fail_and_exit(self.msg)
                 # Since have_port_channel_config_list is not empty, the port channel still exists and deletion failed
 
             elif destination_device_management_ip:
                 self.log(
-                    f"Destination device IP provided: '{destination_device_management_ip}'. Verifying deletion of all port channels between source '{source_device_management_ip}' and destination '{destination_device_management_ip}'.",
+                    f"Destination device IP provided: '{destination_device_management_ip}'. Verifying deletion of all port channels between "
+                    f"source '{source_device_management_ip}' and destination '{destination_device_management_ip}'.",
                     "DEBUG",
                 )
-                self.msg = f"Port channel verification failed at index '{i}'. Port channels between source device '{source_device_management_ip}' and destination device '{destination_device_management_ip}' should have been deleted but still exist: {self.pprint(have_port_channel_config_list)}"
+                self.msg = (
+                    f"Port channel verification failed at index '{i}'. Port channels between source device '{source_device_management_ip}' "
+                    f"and destination device '{destination_device_management_ip}' should "
+                    f"have been deleted but still exist: {self.pprint(have_port_channel_config_list)}"
+                )
                 self.fail_and_exit(self.msg)
                 # If we reach here, have_port_channel_config_list is not empty, so deletion failed
             else:
                 self.log(
-                    f"No specific links, port channel number, or destination device provided. Verifying deletion of all port channels from source device '{source_device_management_ip}'.",
+                    f"No specific links, port channel number, or destination device provided. "
+                    f"Verifying deletion of all port channels from source device '{source_device_management_ip}'.",
                     "DEBUG",
                 )
-                self.msg = f"Port channel verification failed at index '{i}'. Port channels from source device '{source_device_management_ip}' should have been deleted but still exist: {self.pprint(have_port_channel_config_list)}"
+                self.msg = (
+                    f"Port channel verification failed at index '{i}'. Port channels from source device '{source_device_management_ip}' "
+                    f"should have been deleted but still exist: {self.pprint(have_port_channel_config_list)}"
+                )
                 self.fail_and_exit(self.msg)
                 # If we still have any port channel configs from this source device, deletion failed
 
