@@ -1,0 +1,182 @@
+---
+- debug:
+    msg: "Initializing LAN Automation Workflow Management Test"
+
+- debug:
+    msg: "Role Path {{ role_path }}"
+
+- block:
+  - name: Load variables and set Catalyst Center credentials
+    include_vars:
+      file: "{{ role_path }}/vars/vars_lan_automation_workflow_management.yml"
+      name: vars_map
+    vars:
+      dnac_login: &dnac_login
+        dnac_host: "{{ dnac_host }}"
+        dnac_username: "{{ dnac_username }}"
+        dnac_password: "{{ dnac_password }}"
+        dnac_verify: "{{ dnac_verify }}"
+        dnac_port: "{{ dnac_port }}"
+        dnac_version: "{{ dnac_version }}"
+        dnac_debug: "{{ dnac_debug }}"
+        dnac_log: true
+        dnac_log_level: DEBUG
+        config_verify: true
+
+#############################################
+#                Clean Up                   #
+#############################################
+
+  - name: Remove existing port channels before test execution
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.cleanup_port_channels }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+#############################################
+#          Create Port Channel 1            #
+#############################################
+
+  - name: Create Port Channel 1
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        - "{{ item }}"
+    loop: "{{ vars_map.create_port_channel_1 }}"
+    register: result_pc1
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+  - name: Verify Port Channel 1 creation
+    assert:
+      that:
+        - item.changed == true
+    loop: "{{ result_pc1.results }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+#############################################
+#          Create Port Channel 2            #
+#############################################
+
+  - name: Create Port Channel 2
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        -  "{{ item }}"
+    loop: "{{ vars_map.create_port_channel_2 }}"
+    register: result_pc2
+
+  - name: Verify Port Channel 2 creation
+    assert:
+      that:
+        - item.changed == true
+    loop: "{{ result_pc2.results }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+#############################################
+#          Delete Port Channel 2            #
+#############################################
+
+  - name: Delete Port Channel 2
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        -  "{{ item }}"
+    loop: "{{ vars_map.delete_port_channel_2 }}"
+    register: result_delete_pc2
+
+  - name: Verify Port Channel 2 deletion
+    assert:
+      that:
+        - item.changed == true
+    loop: "{{ result_delete_pc2.results }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+#############################################
+#       Add Link to Port Channel 1          #
+#############################################
+
+  - name: Add new links to Port Channel 1
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: merged
+      config:
+        -  "{{ item }}"
+    loop: "{{ vars_map.add_link_port_channel_1 }}"
+    register: result_add_links_pc1
+
+  - name: Verify links added successfully to Port Channel 1
+    assert:
+      that:
+        - item.changed == true
+    loop: "{{ result_add_links_pc1.results }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+#############################################
+#     Remove Link from Port Channel 1       #
+#############################################
+
+  - name: Remove link from Port Channel 1
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        -  "{{ item }}"
+    loop: "{{ vars_map.remove_link_port_channel_1 }}"
+    register: result_remove_link_pc1
+
+  - name: Verify link removal from Port Channel 1
+    assert:
+      that:
+        - item.changed == true
+    loop: "{{ result_remove_link_pc1.results }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
+
+#############################################
+#        Delete Port Channel 1              #
+#############################################
+
+  - name: Delete Port Channel 1
+    cisco.dnac.lan_automation_workflow_manager:
+      <<: *dnac_login
+      state: deleted
+      config:
+        -  "{{ item }}"
+    loop: "{{ vars_map.delete_port_channel_1 }}"
+    register: result_delete_pc1
+
+  - name: Verify Port Channel 1 deletion
+    assert:
+      that:
+        - item.changed == true
+    loop: "{{ result_delete_pc1.results }}"
+
+  - name: Wait for 100 seconds
+    pause:
+      seconds: 100
