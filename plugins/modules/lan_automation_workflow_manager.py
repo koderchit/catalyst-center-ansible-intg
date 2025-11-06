@@ -1356,8 +1356,8 @@ class LanAutomation(DnacBase):
                     f"Filtered Port Channel configurations: {self.pprint(filtered_info)}",
                     "DEBUG",
                 )
-                self.execute_get_request()
                 return filtered_info
+
         except Exception as e:
             self.msg = (
                 f"Exception occurred while retrieving Port Channel details - "
