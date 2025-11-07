@@ -1478,7 +1478,8 @@ class IseRadiusIntegration(DnacBase):
                 return self
 
             self.log(
-                f"Calling 'accept_cisco_ise_server_certificate_for_cisco_ise_server_integration' API with payload - id: {cisco_ise_id}, isCertAcceptedByUser: {trusted_server}",
+                "Calling 'accept_cisco_ise_server_certificate_for_cisco_ise_server_integration' API with payload - "
+                f"id: {cisco_ise_id}, isCertAcceptedByUser: {trusted_server}",
                 "INFO",
             )
             response = self.dnac._exec(
