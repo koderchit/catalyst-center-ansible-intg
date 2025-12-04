@@ -1790,58 +1790,6 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
 
         return {"rule_descriptions": transformed_rule_descriptions}
 
-    def get_tag_name_by_id(self, tag_id):
-        """
-        Retrieves the tag name for a given tag ID from the Cisco Catalyst Center.
-
-        Args:
-            tag_id (str): The ID of the tag whose name needs to be retrieved.
-
-        Returns:
-            str or None: The tag name if found, otherwise None.
-
-        Description:
-            This method initiates an API call to retrieve tag details using the provided tag ID.
-            If the response is empty or an error occurs, it logs the issue and returns None.
-        """
-
-        self.log("Retrieving tag name for tag ID: '{0}'.".format(tag_id), "DEBUG")
-
-        try:
-            response = self.dnac._exec(
-                family="tag", function="get_tag", params={"id": tag_id}
-            )
-
-            self.log(
-                "Received API response from 'get_tag' for the tag ID '{0}': {1}".format(
-                    tag_id, str(response)
-                ),
-                "DEBUG",
-            )
-
-            tag_data = response.get("response")
-
-            if not isinstance(tag_data, list) or not tag_data:
-                self.log(
-                    "No tag details found for tag ID: '{0}'. Response: {1}".format(
-                        tag_id, tag_data
-                    ),
-                    "DEBUG",
-                )
-                return None
-
-            tag_name = tag_data[0].get("name")
-
-            return tag_name
-
-        except Exception as e:
-            self.msg = "Error retrieving tag name for '{0}' from Cisco Catalyst Center: {1}".format(
-                tag_id, str(e)
-            )
-            self.set_operation_result(
-                "failed", False, self.msg, "ERROR"
-            ).check_return_status()
-
     def format_scope_description_for_playbook(self, scope_description):
         """
         Transforms scope description from Cisco Catalyst Center API format to playbook format.
@@ -1867,14 +1815,13 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
                 }
                 Returns None if scope_description is None or empty.
 
-
         Description:
             The method performs the following transformations:
             1. Validates input scope_description and returns None if empty.
             2. Extracts groupType, scopeObjectIds, and inherit flag from input.
             3. For TAG scopes:
                - Iterates through each tag ID in scopeObjectIds
-               - Calls get_tag_name_by_id() to resolve tag ID to tag name
+               - Resolves tag ID to tag name using cached tag_id_to_tag_name_mapping
                - Fails if any tag ID cannot be resolved
                - Builds list of tag names
             4. For SITE scopes:
@@ -1936,7 +1883,7 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
                     f"Resolving tag {index}/{len(scope_object_ids)}: tag_id='{tag_id}'",
                     "DEBUG",
                 )
-                tag_name = self.get_tag_name_by_id(tag_id)
+                tag_name = self.tag_id_to_tag_name_mapping.get(tag_id)
                 if tag_name is None:
                     self.msg = (
                         f"Tag ID: {tag_id} could not be resolved to a tag name in Cisco Catalyst Center. "
