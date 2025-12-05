@@ -64,6 +64,9 @@ class TestDnacLanAutomationWorkflow(TestDnacModule):
     playbook_config_create_port_channel_negative_testcase_playbook_case_8 = (
         test_data.get("create_port_channel_negative_testcase_playbook_case_8")
     )
+    playbook_config_update_port_channel_negative_testcase_playbook_case_9 = (
+        test_data.get("update_port_channel_negative_testcase_playbook_case_9")
+    )
 
     def setUp(self):
         super(TestDnacLanAutomationWorkflow, self).setUp()
@@ -191,6 +194,17 @@ class TestDnacLanAutomationWorkflow(TestDnacModule):
                 self.test_data.get("get_device_list_call_1_case_8"),
                 self.test_data.get("get_device_list_call_2_case_8"),
             ]
+        elif (
+            "update_port_channel_negative_testcase_playbook_case_9"
+            in self._testMethodName
+        ):
+            self.run_dnac_exec.side_effect = [
+                self.test_data.get("get_device_list_call_1_case_9"),
+                self.test_data.get("get_device_list_call_2_case_9"),
+                self.test_data.get("get_lan_automation_status_call_1_case_9"),
+                self.test_data.get("get_active_lan_automation_sessions_call_1_case_9"),
+                self.test_data.get("get_port_channel_call_1_case_9"),
+            ]
 
     def test_delete_port_channel_when_it_doesnot_exist_case_1(self):
         #  Test Description: Delete port channel when it does not exist between source and destination device.
@@ -277,8 +291,9 @@ class TestDnacLanAutomationWorkflow(TestDnacModule):
         result = self.execute_module(changed=False, failed=True)
         self.assertEqual(
             result.get("msg"),
-            "The following required parameters are missing or invalid: None of 'source_device_management_ip_address', "
-            "'source_device_management_mac_address' or 'source_device_management_serial_number' are provided. Atleast one of them is required.",
+            "The following required parameters are missing or invalid: Configuration 1: Missing source device identifiers "
+            "- at least one of 'source_device_management_ip_address', 'source_device_management_mac_address' or "
+            "'source_device_management_serial_number' is required",
         )
 
     def test_delete_second_port_channel_playbook_case_5(self):
@@ -365,6 +380,34 @@ class TestDnacLanAutomationWorkflow(TestDnacModule):
         )
         result = self.execute_module(changed=False, failed=True)
         self.assertIn(
-            "The following required parameters are missing or invalid: links",
+            "Missing links parameter for merged state - at least one link must be specified",
+            result.get("msg"),
+        )
+
+    def test_update_port_channel_negative_testcase_playbook_case_9(self):
+        # Test Description: Update port channel by specifying port_channel_number that does not exist.
+        # Expected Result: Module should fail with appropriate error message indicating the port channel
+        # number does not exist and suggesting to remove the parameter to create a new port channel.
+        set_module_args(
+            dict(
+                dnac_host="1.1.1.1",
+                dnac_username="dummy",
+                dnac_password="dummy",
+                dnac_version="3.1.3.0",
+                dnac_log=True,
+                state="merged",
+                config_verify=True,
+                dnac_log_level="DEBUG",
+                config=self.playbook_config_update_port_channel_negative_testcase_playbook_case_9,
+            )
+        )
+        result = self.execute_module(changed=False, failed=True)
+        self.assertIn(
+            "No existing Port Channel configuration found with the provided "
+            "port_channel_number: 11. When both port_channel_number and links "
+            "are specified, an existing Port Channel is expected for update. "
+            "If you want to create a new Port Channel, please remove the "
+            "port_channel_number parameter from your playbook configuration "
+            "and try again.",
             result.get("msg"),
         )
