@@ -2365,20 +2365,20 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
 
         self.want = want
         self.log("Desired State (want): {0}".format(str(self.want)), "INFO")
-        self.msg = "Successfully collected all parameters from the playbook for Wireless Design operations."
+        self.msg = "Successfully collected all parameters from the playbook for Tags operations."
         self.status = "success"
         return self
 
-    def get_diff_merged(self):
+    def get_diff_gathered(self):
         """
-        Executes the merge operations for various network configurations in the Cisco Catalyst Center.
+        Executes the gather operations for various network configurations in the Cisco Catalyst Center.
         This method processes additions and updates for SSIDs, interfaces, power profiles, access point profiles,
         radio frequency profiles, and anchor groups. It logs detailed information about each operation,
         updates the result status, and returns a consolidated result.
         """
 
         start_time = time.time()
-        self.log("Starting 'get_diff_merged' operation.", "DEBUG")
+        self.log("Starting 'get_diff_gathered' operation.", "DEBUG")
         operations = [
             (
                 "yaml_config_generator",
@@ -2417,7 +2417,7 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
 
         end_time = time.time()
         self.log(
-            "Completed 'get_diff_merged' operation in {0:.2f} seconds.".format(
+            "Completed 'get_diff_gathered' operation in {0:.2f} seconds.".format(
                 end_time - start_time
             ),
             "DEBUG",
