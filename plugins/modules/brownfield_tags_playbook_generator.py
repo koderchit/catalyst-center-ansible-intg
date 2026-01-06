@@ -32,8 +32,8 @@ options:
   state:
     description: The desired state of Cisco Catalyst Center after module execution.
     type: str
-    choices: [merged]
-    default: merged
+    choices: [gathered]
+    default: gathered
   config:
     description:
     - A list of filters for generating YAML playbook compatible with the `tags_workflow_manager`
@@ -66,7 +66,6 @@ options:
         - Global filters to apply when generating the YAML configuration file.
         - These filters apply to all components unless overridden by component-specific filters.
         type: dict
-        suboptions:
       component_specific_filters:
         description:
         - Filters to specify which components to include in the YAML configuration
@@ -152,7 +151,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - generate_all_configurations: true
@@ -178,7 +177,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/complete_tags_config.yaml"
@@ -205,7 +204,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/catc_tags.yaml"
@@ -233,7 +232,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/catc_tags.yaml"
@@ -261,7 +260,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/catc_tags.yaml"
@@ -289,7 +288,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/catc_tags.yaml"
@@ -320,7 +319,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/catc_tags.yaml"
@@ -351,7 +350,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/all_tags.yaml"
@@ -388,7 +387,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/tags_by_id.yaml"
@@ -419,7 +418,7 @@ EXAMPLES = r"""
         dnac_log_level: DEBUG
         dnac_log_append: false
         dnac_log_file_path: "{{ dnac_log_file_path }}"
-        state: merged
+        state: gathered
         config_verify: true
         config:
           - file_path: "/tmp/mixed_filter_tags.yaml"
@@ -510,7 +509,7 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
         Returns:
             The method does not return a value.
         """
-        self.supported_states = ["merged"]
+        self.supported_states = ["gathered"]
         super().__init__(module)
         self.module_schema = self.get_workflow_filters_schema()
         self.site_id_name_dict = self.get_site_id_name_mapping()
@@ -2344,7 +2343,7 @@ class TagsPlaybookGenerator(DnacBase, BrownFieldHelper):
 
         Args:
             config (dict): The configuration data for the network elements.
-            state (str): The desired state of the network elements ('merged' or 'deleted').
+            state (str): The desired state of the network elements ('gathered' or 'deleted').
         """
 
         self.log(
@@ -2447,7 +2446,7 @@ def main():
         "dnac_api_task_timeout": {"type": "int", "default": 1200},
         "dnac_task_poll_interval": {"type": "int", "default": 2},
         "config": {"required": True, "type": "list", "elements": "dict"},
-        "state": {"default": "merged", "choices": ["merged"]},
+        "state": {"default": "gathered", "choices": ["gathered"]},
     }
 
     # Initialize the Ansible module with the provided argument specifications
